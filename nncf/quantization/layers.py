@@ -44,7 +44,8 @@ class QuantizerConfig:
                  per_channel=False,
                  input_shape=None,
                  is_weights=False,
-                 logarithm_scale=False):
+                 logarithm_scale=False,
+                 target_weight_dim_for_compression=0):
         self.bits = bits
         self.mode = mode
         self.signedness_to_force = signedness_to_force
@@ -52,6 +53,7 @@ class QuantizerConfig:
         self.is_weights = is_weights
         self.input_shape = input_shape
         self.logarithm_scale = logarithm_scale
+        self.target_weight_dim_for_compression = target_weight_dim_for_compression
 
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
@@ -116,6 +118,7 @@ class BaseQuantizer(nn.Module):
         super().__init__()
         self.input_shape = config.input_shape
         self.per_channel = config.per_channel
+        self.target_weight_dim_for_compression = config.target_weight_dim_for_compression
         self.is_weights = config.is_weights
         self.signedness_to_force = config.signedness_to_force
         self._is_using_log_scale_storage = config.logarithm_scale
@@ -312,7 +315,8 @@ class SymmetricQuantizer(BaseQuantizer):
         self.signed_tensor = nn.Parameter(torch.IntTensor([0]), requires_grad=False)
         self.collect_scale_statistics = False
         if self.per_channel:
-            self.scale_shape = get_per_channel_scale_shape(self.input_shape, self.is_weights)
+            self.scale_shape = get_per_channel_scale_shape(self.input_shape, self.is_weights,
+                                                           self.target_weight_dim_for_compression)
 
         setattr(self, self._SCALE_PARAM_STORAGE_ATTR, nn.Parameter(torch.ones(self.scale_shape), requires_grad=True))
         if self._is_using_log_scale_storage:
@@ -461,7 +465,8 @@ class AsymmetricQuantizer(BaseQuantizer):
     def __init__(self, config):
         super().__init__(config)
         if self.per_channel:
-            self.scale_shape = get_per_channel_scale_shape(self.input_shape, self.is_weights)
+            self.scale_shape = get_per_channel_scale_shape(self.input_shape, self.is_weights,
+                                                           self.target_weight_dim_for_compression)
 
         self.input_low = nn.Parameter(torch.zeros(self.scale_shape), requires_grad=True)
         setattr(self, self._INPUT_RANGE_PARAM_STORAGE_ATTR,

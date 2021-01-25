@@ -224,10 +224,10 @@ def sum_like(tensor_to_sum, ref_tensor):
     return tensor_to_sum
 
 
-def get_per_channel_scale_shape(input_shape, is_weights):
+def get_per_channel_scale_shape(input_shape, is_weights, dim=0):
     scale_shape = [1 for _ in input_shape]
     if is_weights:
-        scale_shape[0] = input_shape[0]  # Per weight channel scales
+        scale_shape[dim] = input_shape[dim]  # Per weight channel scales
     else:
         scale_shape[1] = input_shape[1]  # Per activation channel scales
 

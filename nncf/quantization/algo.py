@@ -141,6 +141,7 @@ class QuantizerSetupGeneratorBase:
         if qconfig.per_channel:
             if is_weights:
                 qconfig.input_shape = target_module.weight.shape
+                qconfig.target_weight_dim_for_compression = target_module.target_weight_dim_for_compression
             elif input_shape is not None:
                 qconfig.input_shape = input_shape
             else:
@@ -205,6 +206,7 @@ class QuantizerSetupGeneratorBase:
                 qconfig_list_copy = deepcopy(qconfig_list)
                 for qconfig in qconfig_list_copy:
                     qconfig.input_shape = module.weight.shape
+                    qconfig.target_weight_dim_for_compression = module.target_weight_dim_for_compression
                 quantized_modules_with_potential_qconfig.append(QuantizableModule(module,
                                                                                   module_scope,
                                                                                   qconfig_list_copy))

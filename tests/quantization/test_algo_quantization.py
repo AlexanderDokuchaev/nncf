@@ -37,7 +37,7 @@ from nncf.utils import get_all_modules_by_type
 from tests.quantization.test_quantization_helpers import get_quantization_config_without_range_init, \
     get_squeezenet_quantization_config
 from tests.helpers import BasicConvTestModel, TwoConvTestModel, get_empty_config, \
-    create_compressed_model_and_algo_for_test, create_conv
+    create_compressed_model_and_algo_for_test, create_conv, create_transpose_conv
 
 
 def compare_qconfigs(config: QuantizerConfig, quantizer: BaseQuantizer):
@@ -511,3 +511,35 @@ def test_quantizer_ordering(requanting_qconf: QuantizerConfig,
                             base_qconf: QuantizerConfig, is_valid_requant: bool):
     test_result = requanting_qconf.is_valid_requantization_for(base_qconf)
     assert test_result == is_valid_requant
+
+
+class UpscaleTestModel(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.features = []
+        self.conv = create_conv(1, 6, 2, -1, -2)
+        self.up = create_transpose_conv(6, 2, 3, 3, 1, 2)
+        self.relu = nn.ReLU()
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.up(x)
+        x = self.relu(x)
+        return x
+
+
+@pytest.mark.parametrize('mode', (
+                         (
+                             QuantizationMode.SYMMETRIC,
+                             QuantizationMode.ASYMMETRIC
+                         )))
+def test_scale_shape(mode):
+    config = get_quantization_config_without_range_init()
+    config['compression']['weights'] = {}
+    config['compression']['weights']['mode'] = mode
+
+    model = UpscaleTestModel()
+    quant_model, _ = create_compressed_model_and_algo_for_test(model, config)
+
+    assert quant_model.nncf_module.conv.pre_ops._modules['0'].op.scale_shape == [6,1,1,1]
+    assert quant_model.nncf_module.up.pre_ops._modules['0'].op.scale_shape == [1,2,1,1]
