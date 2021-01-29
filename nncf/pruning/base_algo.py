@@ -218,8 +218,7 @@ class BasePruningAlgoBuilder(CompressionAlgorithmBuilder):
             msg = "Ignored adding Weight Pruner in scope: {} because"\
                              " this scope is one of the last convolutions".format(module_scope_str)
             prune = False
-        elif is_grouped_conv(module):
-            if not is_depthwise_conv(module):
+        elif is_grouped_conv(module) and not is_depthwise_conv(module):
                 msg = "Ignored adding Weight Pruner in scope: {} because" \
                       " this scope is grouped convolution".format(module_scope_str)
                 prune = False
