@@ -643,6 +643,12 @@ class PixelShuffleMetatype(PTOperatorMetatype):
     torch_nn_functional_patch_spec = PTPatchSpec([name])
 
 
+@PT_OPERATOR_METATYPES.register()
+class NewEmptyMetatype(PTOperatorMetatype):
+    name = "new_empty"
+    torch_tensor_patch_spec = PTPatchSpec([name], ForwardTraceOnly())
+
+
 def get_operator_metatypes() -> List[Type[OperatorMetatype]]:
     """
     Returns a list of the operator metatypes.
