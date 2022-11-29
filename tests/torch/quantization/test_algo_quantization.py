@@ -850,3 +850,29 @@ def test_activation_ignored_scope(update_config_info, should_ignore_quantizers):
     ctrl, _ = create_compressed_model(model, config)
     assert Counter([item.target_node_name for item in ctrl.all_quantizations.keys()]) == \
            Counter(ref_quantization_names)
+
+
+@pytest.mark.parametrize('update_config_info, fail, should_fail', [
+     ({"ignored_scopes": ["LeNet/relu_1"]}, True, False),
+     ({"ignored_scopes": ["unknown_node"]}, True, True),
+     ({"target_scopes":  ["LeNet/relu_1"]}, True, False),
+     ({"target_scopes":  ["unknown_node"]}, True, True),
+     ({"ignored_scopes": ["LeNet/relu_1"]}, False, False),
+     ({"ignored_scopes": ["unknown_node"]}, False, False),
+     ({"target_scopes":  ["LeNet/relu_1"]}, False, False),
+     ({"target_scopes":  ["unknown_node"]}, False, False)
+])
+def test_fail_on_check_scopes(update_config_info, fail, should_fail):
+    model = LeNet()
+
+    config = get_quantization_config_without_range_init(LeNet.INPUT_SIZE[-1])
+    config["fail_on_config_warnings"] = fail
+    config["compression"].update(update_config_info)
+    train_loader = create_random_mock_dataloader(config, num_samples=10)
+    config = register_default_init_args(config, train_loader)
+    try:
+        create_compressed_model(model, config)
+    except RuntimeError:
+        assert should_fail
+        return
+    assert not should_fail

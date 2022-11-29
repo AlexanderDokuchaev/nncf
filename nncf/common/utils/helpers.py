@@ -76,6 +76,48 @@ def matches_any(tested_str: str,
     return False
 
 
+def should_consider_scope_ext(serializable_id: Union[QuantizerId, NNCFNodeName],
+                              ignored_scopes: List[str],
+                              target_scopes: Optional[List[str]] = None) -> Union[str, None]:
+    """
+    Used when an entity arising during compression has to be compared to an allowlist or a denylist of strings
+    (potentially regex-enabled) that is defined in an NNCFConfig .json.
+
+    :param serializable_id: One of the supported entity types to be matched - currently possible to pass either
+    NNCFNodeName (to refer to the original model operations) or QuantizerId (to refer to specific quantizers)
+    :param target_scopes: A list of strings specifying an allowlist for the serializable_id. Entries of the list
+        may be prefixed with `{re}` to enable regex matching.
+    :param ignored_scopes: A list of strings specifying a denylist for the serializable_id. Entries of the list
+        may be prefixed with `{re}` to enable regex matching.
+    :return:
+    """
+    string_id = str(serializable_id)
+    match_target_pattern = matches_any_ext(string_id, target_scopes)
+    match_ignore_pattern = matches_any_ext(string_id, ignored_scopes)
+
+    hould_consider = (target_scopes is None or match_target_pattern is not None) \
+                     and match_ignore_pattern is None
+
+    return hould_consider, match_ignore_pattern, match_target_pattern
+
+
+def matches_any_ext(tested_str: str,
+                    str_or_list_to_match_to: Union[List[str], str]) -> Union[str, None]:
+    if str_or_list_to_match_to is None:
+        return None
+
+    str_list = [str_or_list_to_match_to] if isinstance(str_or_list_to_match_to, str) else str_or_list_to_match_to
+    for item in str_list:
+        if '{re}' in item:
+            regex = item.replace('{re}', '')
+            if re.search(regex, tested_str):
+                return item
+        else:
+            if tested_str == item:
+                return item
+    return None
+
+
 def configure_accuracy_aware_paths(log_dir: str) -> str:
     """
     Create a subdirectory inside of the passed log directory

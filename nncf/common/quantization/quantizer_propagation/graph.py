@@ -51,7 +51,7 @@ from nncf.common.quantization.quantizer_setup import WeightQuantizationInsertion
 from nncf.common.quantization.structs import QuantizationMode
 from nncf.common.quantization.structs import QuantizerConfig
 from nncf.common.quantization.structs import UnifiedScaleType
-from nncf.common.utils.helpers import should_consider_scope
+from nncf.common.utils.helpers import should_consider_scope, should_consider_scope_ext
 from nncf.common.utils.logger import logger as nncf_logger
 
 
@@ -82,13 +82,15 @@ class QuantizerPropagationStateGraph(nx.DiGraph):
 
     def __init__(self, ip_graph: InsertionPointGraph,
                  ignored_scopes: List[str] = None,
-                 target_scopes: List[str] = None):
+                 target_scopes: List[str] = None,
+                 fail_on_check = True):
         super().__init__()
         ip_graph = deepcopy(ip_graph)
         self._created_prop_quantizer_counter = 0
 
         self._ignored_scopes = deepcopy(ignored_scopes)
         self._target_scopes = deepcopy(target_scopes)
+        self._fail_on_check = fail_on_check
         self.ignored_node_keys = []
 
         self._unified_scale_group_manager = UnifiedScalePropagatingQuantizerGroupManager()
@@ -97,6 +99,10 @@ class QuantizerPropagationStateGraph(nx.DiGraph):
         self.op_node_keys_to_underlying_nodes_mapping = {} # type: Dict[str, List[NNCFNode]]
 
         iteration_scope_node_keys = []
+
+        used_ignored_scopes = set()
+        used_target_scopes = set()
+
         for node_key, node in ip_graph.nodes.items():
             qpg_node = {
                 self.NODE_TYPE_NODE_ATTR: \
@@ -128,12 +134,16 @@ class QuantizerPropagationStateGraph(nx.DiGraph):
                 self.op_node_keys_to_underlying_nodes_mapping[node_key] = underlying_nncf_nodes
 
                 ignored = False
-                # For the fused-pattern nodes, will only ignore the entire pattern if the primary node in the
-                # merged pattern is in the ignored scopes. The primary node is the first one in the
-                # underlying_nncf_nodes list.
-                primary_node = underlying_nncf_nodes[0]
-                if not should_consider_scope(primary_node.node_name, self._ignored_scopes, self._target_scopes):
-                    ignored = True
+                for nncf_node in underlying_nncf_nodes:
+                    should_consider, pt_ignore, pt_target = should_consider_scope_ext(
+                        nncf_node.node_name, self._ignored_scopes, self._target_scopes
+                    )
+                    if pt_ignore:
+                        used_ignored_scopes.add(pt_ignore)
+                    if pt_target:
+                        used_target_scopes.add(pt_target)
+                    if not should_consider:
+                        ignored = True
 
                 if ignored:
                     qpg_node[self.IS_IN_IGNORED_SCOPES] = True
@@ -151,6 +161,20 @@ class QuantizerPropagationStateGraph(nx.DiGraph):
 
             self.add_node(node_key, **qpg_node)
 
+        not_used_ignored_scope = set(self._ignored_scopes) - used_ignored_scopes if self._ignored_scopes else set()
+        not_used_target_scope = set(self._target_scopes) - used_target_scopes if self._target_scopes else set()
+        if not_used_ignored_scope or not_used_target_scope:
+            err_msg = ""
+            if not_used_ignored_scope:
+                err_msg += f"Ignored scope contains dont used scopes: {not_used_ignored_scope}."
+            if not_used_target_scope:
+                err_msg += f"Target scope contains dont used scopes: {not_used_target_scope}."
+
+            if self._fail_on_check:
+                raise RuntimeError(err_msg)
+            nncf_logger.warning(err_msg)
+
+
         for from_node, to_node, edge_data in ip_graph.edges(data=True):
             edge_data[self.AFFECTING_PROPAGATING_QUANTIZERS_ATTR] = []
             is_integer = edge_data.pop(InsertionPointGraph.IS_INTEGER_PATH_EDGE_ATTR)
@@ -167,11 +191,13 @@ class QuantizerPropagationStateGraph(nx.DiGraph):
         :param metatype: The metatype to look for.
         :return: List of node keys.
         """
+
         output = []
         for node, node_metatype in self.nodes(self.OPERATOR_METATYPE_NODE_ATTR):
             if node_metatype == metatype:
                 output.append(node)
         return output
+
 
     def _insertion_point_to_quant_insertion_point(self,
                                                   ip: Union[PreHookInsertionPoint,
