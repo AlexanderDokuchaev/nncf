@@ -11,8 +11,11 @@
  limitations under the License.
 """
 
+from typing import Any
+from typing import Dict
+from typing import Union
+
 import torch
-from typing import Union, Any, Dict
 from torch import nn
 
 from nncf.common.engine import Engine
@@ -33,9 +36,7 @@ class PTEngine(Engine):
         self._model = model
         self._model.eval()
 
-    def infer(self,
-              input_data: Union[torch.Tensor, Dict[str, torch.Tensor]]) \
-              -> Union[torch.Tensor, Dict[str, Any]]:
+    def infer(self, input_data: Union[torch.Tensor, Dict[str, torch.Tensor]]) -> Union[torch.Tensor, Dict[str, Any]]:
         """
         Runs Torch model on the provided input.
 

@@ -11,20 +11,22 @@
  limitations under the License.
 """
 
+from abc import ABC
+from abc import abstractmethod
+
 import numpy as np
-from abc import ABC, abstractmethod
 import openvino.runtime as ov
 from openvino.runtime import opset9 as opset
 
 from nncf.common.utils.registry import Registry
 
-SYNTHETIC_MODELS = Registry('OV_SYNTHETIC_MODELS')
+SYNTHETIC_MODELS = Registry("OV_SYNTHETIC_MODELS")
 
 
 class OVReferenceModel(ABC):
     def __init__(self):
         self._rng = np.random.default_rng(seed=0)
-        self.ref_graph_name = f'{self.__class__.__name__}.dot'
+        self.ref_graph_name = f"{self.__class__.__name__}.dot"
         self.ov_model = self._create_ov_model()
 
     @abstractmethod
@@ -37,7 +39,7 @@ class LinearModel(OVReferenceModel):
     def _create_ov_model(self):
         input_shape = [1, 3, 4, 2]
         input_1 = opset.parameter(input_shape, name="Input")
-        reshape = opset.reshape(input_1, (1, 3, 2, 4), special_zero=False, name='Reshape')
+        reshape = opset.reshape(input_1, (1, 3, 2, 4), special_zero=False, name="Reshape")
         data = self._rng.random((1, 3, 4, 5)).astype(np.float32) - 0.5
         matmul = opset.matmul(reshape, data, transpose_a=False, transpose_b=False, name="MatMul")
         add = opset.add(reshape, self._rng.random((1, 3, 2, 4)).astype(np.float32), name="Add")
@@ -130,8 +132,9 @@ class QuantizedModel(OVReferenceModel):
     @staticmethod
     def _create_fq_node(parent_node, name):
         # OV bug with FQ element types after fusing preprocessing
-        return opset.fake_quantize(parent_node,
-             np.float32(-1), np.float32(1), np.float32(-1), np.float32(1), 256, name=name)
+        return opset.fake_quantize(
+            parent_node, np.float32(-1), np.float32(1), np.float32(-1), np.float32(1), 256, name=name
+        )
 
     def _create_ov_model(self):
         input_1 = opset.parameter([1, 3, 14, 28], name="Input_1")
@@ -193,7 +196,8 @@ class WeightsModel(OVReferenceModel):
         kernel_2 = self._rng.random((3, 3, 1, 1)).astype(np.float32)
         output_shape = [1, 1]
         conv_tr = opset.convolution_backprop_data(
-            conv, kernel_2, output_shape, strides, pads, pads, dilations, name="Conv_backprop")
+            conv, kernel_2, output_shape, strides, pads, pads, dilations, name="Conv_backprop"
+        )
 
         weights_1 = self._rng.random((1, 3, 1, 4)).astype(np.float32)
         matmul_1 = opset.matmul(conv_tr, weights_1, transpose_a=False, transpose_b=False, name="MatMul_1")
@@ -239,9 +243,9 @@ class ScaleShiftReluModel(OVReferenceModel):
 
 
 class FPModel(OVReferenceModel):
-    def __init__(self, const_dtype='FP32', input_dtype='FP32'):
-        self.const_dtype = np.float32 if const_dtype == 'FP32' else np.float16
-        self.input_dtype = np.float32 if input_dtype == 'FP32' else np.float16
+    def __init__(self, const_dtype="FP32", input_dtype="FP32"):
+        self.const_dtype = np.float32 if const_dtype == "FP32" else np.float16
+        self.input_dtype = np.float32 if input_dtype == "FP32" else np.float16
         super().__init__()
 
     def _create_ov_model(self):
@@ -414,7 +418,7 @@ class LSTMModel(OVReferenceModel):
         tanh_2 = opset.tanh(add_2, name="Tanh_2")
 
         multiply_3 = opset.multiply(sigmoid_3, tanh_2, name="Multiply_3")
-        assign_1 = opset.assign(multiply_3, variable_1,  name="Assign_1")
+        assign_1 = opset.assign(multiply_3, variable_1, name="Assign_1")
 
         data = self._rng.random((128, 64)).astype(np.float32)
         matmul_3 = opset.matmul(multiply_3, data, transpose_a=False, transpose_b=True, name="MatMul_3")
@@ -436,8 +440,9 @@ class LSTMSequenceModel(OVReferenceModel):
         R = ov.opset9.constant(np.zeros(([1, 512, 128])), dtype=np.float32)
         B = ov.opset9.constant(np.zeros(([1, 512])), dtype=np.float32)
 
-        lstm = opset.lstm_sequence(x, initial_hidden_state, initial_cell_state,
-                                   seq_len, W, R, B, 128, "FORWARD", name="LSTMSequence")
+        lstm = opset.lstm_sequence(
+            x, initial_hidden_state, initial_cell_state, seq_len, W, R, B, 128, "FORWARD", name="LSTMSequence"
+        )
         data = self._rng.random((1, 1, 128, 3)).astype(np.float32)
         matmul = opset.matmul(lstm.output(0), data, transpose_a=False, transpose_b=False, name="MatMul")
 

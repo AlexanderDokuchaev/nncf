@@ -1,4 +1,3 @@
-
 """
  Copyright (c) 2023 Intel Corporation
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +11,8 @@
  limitations under the License.
 """
 
-import pytest
 import numpy as np
+import pytest
 import torch
 from torch import nn
 
@@ -21,15 +20,12 @@ from nncf import Dataset
 from nncf.common.graph.transformations.commands import TargetType
 from nncf.quantization.algorithms.min_max.torch_backend import PTMinMaxAlgoBackend
 from nncf.torch.statistics.aggregator import PTStatisticsAggregator
-
 from tests.common.test_statistics_aggregator import TemplateTestStatisticsAggregator
 from tests.torch.ptq.helpers import get_nncf_network
 from tests.torch.ptq.test_ptq_params import ToNNCFNetworkInterface
 
-
-
-IDENTITY_NODE_NAME = 'PTIdentityConvModel/__add___0'
-CONV_NODE_NAME = 'PTIdentityConvModel/NNCFConv2d[conv]/conv2d_0'
+IDENTITY_NODE_NAME = "PTIdentityConvModel/__add___0"
+CONV_NODE_NAME = "PTIdentityConvModel/NNCFConv2d[conv]/conv2d_0"
 INPUT_SHAPE = [1, 3, 3, 3]
 
 
@@ -40,7 +36,7 @@ class PTIdentityConvModel(nn.Module, ToNNCFNetworkInterface):
         self.conv.weight.data = torch.tensor(kernel, dtype=torch.float32)
 
     def forward(self, x):
-        return self.conv(x + 0.)
+        return self.conv(x + 0.0)
 
     def get_nncf_network(self):
         return get_nncf_network(self, INPUT_SHAPE)
@@ -78,8 +74,8 @@ class TestStatisticsAggregator(TemplateTestStatisticsAggregator):
         dataset_samples = [np.zeros(input_shape), np.ones(input_shape)]
 
         for i, value in enumerate(dataset_values):
-            dataset_samples[0][0, i, 0, 0] = value['max']
-            dataset_samples[0][0, i, 0, 1] = value['min']
+            dataset_samples[0][0, i, 0, 0] = value["max"]
+            dataset_samples[0][0, i, 0, 1] = value["min"]
 
         return torch.tensor(dataset_samples, dtype=torch.float32)
 

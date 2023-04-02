@@ -11,13 +11,18 @@
  limitations under the License.
 """
 
-from typing import Dict, List, Tuple, Set, Union
+from typing import Dict
+from typing import List
+from typing import Set
+from typing import Tuple
+from typing import Union
 
 import numpy as np
 import openvino.runtime as ov
 
 from nncf.common.engine import Engine
 from nncf.parameters import TargetDevice
+
 
 class OVNativeEngine(Engine):
     """
@@ -38,8 +43,8 @@ class OVNativeEngine(Engine):
 
     @staticmethod
     def _check_input_data_format(
-            input_data: Union[np.ndarray, List[np.ndarray], Tuple[np.ndarray], Dict[str, np.ndarray]],
-            input_names: Set[str]) -> None:
+        input_data: Union[np.ndarray, List[np.ndarray], Tuple[np.ndarray], Dict[str, np.ndarray]], input_names: Set[str]
+    ) -> None:
         """
         Checks correspondence of the model input names and the passed data.
         If there is a mismatch, the method throws a more specific and readable error than
@@ -50,14 +55,15 @@ class OVNativeEngine(Engine):
         """
         actual_num_inputs = 1 if isinstance(input_data, np.ndarray) else len(input_data)
         if actual_num_inputs != len(input_names):
-            raise RuntimeError(f'Model expects {len(input_names)} inputs, but {actual_num_inputs} are provided.')
+            raise RuntimeError(f"Model expects {len(input_names)} inputs, but {actual_num_inputs} are provided.")
         if isinstance(input_data, dict):
             for name in input_names:
                 if name not in input_data:
-                    raise RuntimeError(f'Missing a required input: {name} to run the model.')
+                    raise RuntimeError(f"Missing a required input: {name} to run the model.")
 
-    def infer(self, input_data: Union[np.ndarray, List[np.ndarray], Tuple[np.ndarray], Dict[str, np.ndarray]]) \
-              -> Dict[str, np.ndarray]:
+    def infer(
+        self, input_data: Union[np.ndarray, List[np.ndarray], Tuple[np.ndarray], Dict[str, np.ndarray]]
+    ) -> Dict[str, np.ndarray]:
         """
         Runs model on the provided input via OpenVINO Runtime.
         Returns the dictionary of model outputs by node names.

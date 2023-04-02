@@ -11,21 +11,23 @@
  limitations under the License.
 """
 
-from typing import Union, List, Deque
+from typing import Deque
+from typing import List
+from typing import Union
 
 import numpy as np
 
 from nncf.common.tensor import NNCFTensor
 from nncf.common.tensor import TensorElementsType
-from nncf.common.tensor_statistics.collectors import MinMaxStatisticCollector
-from nncf.common.tensor_statistics.collectors import NNCFCollectorTensorProcessor
+from nncf.common.tensor_statistics.collectors import BatchStatisticCollector
 from nncf.common.tensor_statistics.collectors import MeanMinMaxStatisticCollector
 from nncf.common.tensor_statistics.collectors import MeanStatisticCollector
-from nncf.common.tensor_statistics.collectors import BatchStatisticCollector
-from nncf.experimental.openvino_native.tensor import OVNNCFTensor
-from nncf.experimental.openvino_native.statistics.statistics import OVMinMaxTensorStatistic
-from nncf.experimental.openvino_native.statistics.statistics import OVMeanTensorStatistic
+from nncf.common.tensor_statistics.collectors import MinMaxStatisticCollector
+from nncf.common.tensor_statistics.collectors import NNCFCollectorTensorProcessor
 from nncf.experimental.openvino_native.statistics.statistics import OVBatchTensorStatistic
+from nncf.experimental.openvino_native.statistics.statistics import OVMeanTensorStatistic
+from nncf.experimental.openvino_native.statistics.statistics import OVMinMaxTensorStatistic
+from nncf.experimental.openvino_native.tensor import OVNNCFTensor
 
 
 class OVNNCFCollectorTensorProcessor(NNCFCollectorTensorProcessor):

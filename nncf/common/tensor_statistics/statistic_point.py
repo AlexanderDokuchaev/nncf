@@ -11,13 +11,13 @@
  limitations under the License.
 """
 
-from typing import Callable, Generator
-
 from collections import UserDict
+from typing import Callable
+from typing import Generator
 
-from nncf.common.tensor_statistics.collectors import TensorStatisticCollectorBase
-from nncf.common.tensor import TensorType
 from nncf.common.graph.transformations.commands import TargetPoint
+from nncf.common.tensor import TensorType
+from nncf.common.tensor_statistics.collectors import TensorStatisticCollectorBase
 
 
 class StatisticPoint:
@@ -28,14 +28,17 @@ class StatisticPoint:
     algorithm implies on what algorithm nedeed this statistics.
     """
 
-    def __init__(self, target_point: TargetPoint, tensor_collector: TensorStatisticCollectorBase,
-                 algorithm: 'Algorithm'):
+    def __init__(
+        self, target_point: TargetPoint, tensor_collector: TensorStatisticCollectorBase, algorithm: "Algorithm"
+    ):
         self.target_point = target_point
         self.algorithm_to_tensor_collectors = {algorithm: [tensor_collector]}
 
     def __eq__(self, other):
-        if self.target_point == other.target_point and \
-                self.algorithm_to_tensor_collectors == other.self.algorithm_to_tensor_collectors:
+        if (
+            self.target_point == other.target_point
+            and self.algorithm_to_tensor_collectors == other.self.algorithm_to_tensor_collectors
+        ):
             return True
         return False
 
@@ -60,28 +63,31 @@ class StatisticPointsContainer(UserDict):
                     for algorithm in statistic_point.algorithm_to_tensor_collectors.keys():
                         if algorithm in _statistic_point.algorithm_to_tensor_collectors:
                             _statistic_point.algorithm_to_tensor_collectors[algorithm].extend(
-                                statistic_point.algorithm_to_tensor_collectors[algorithm])
+                                statistic_point.algorithm_to_tensor_collectors[algorithm]
+                            )
                             return
                         _statistic_point.algorithm_to_tensor_collectors[
-                            algorithm] = statistic_point.algorithm_to_tensor_collectors[algorithm]
+                            algorithm
+                        ] = statistic_point.algorithm_to_tensor_collectors[algorithm]
                         return
             self.data[target_node_name].append(statistic_point)
 
-    def iter_through_statistic_points_in_target_node(self, target_node_name: str,
-                                                     statistic_point_condition_func: Callable[
-                                                         [StatisticPoint], bool]):
+    def iter_through_statistic_points_in_target_node(
+        self, target_node_name: str, statistic_point_condition_func: Callable[[StatisticPoint], bool]
+    ):
         _statistic_points = self.data[target_node_name]
         for _statistic_point in _statistic_points:
             if statistic_point_condition_func(_statistic_point):
                 yield _statistic_point
 
     def get_algo_statistics_for_node(
-            self,
-            target_node_name: str,
-            statistic_point_condition_func: Callable[[StatisticPoint], bool],
-            algorithm: 'Algorithm') -> Generator[TensorStatisticCollectorBase, None, None]:
-
-        for _statistic_point in self.iter_through_statistic_points_in_target_node(target_node_name,
-                                                                                  statistic_point_condition_func):
+        self,
+        target_node_name: str,
+        statistic_point_condition_func: Callable[[StatisticPoint], bool],
+        algorithm: "Algorithm",
+    ) -> Generator[TensorStatisticCollectorBase, None, None]:
+        for _statistic_point in self.iter_through_statistic_points_in_target_node(
+            target_node_name, statistic_point_condition_func
+        ):
             for _tensor_collector in _statistic_point.algorithm_to_tensor_collectors[algorithm]:
                 yield _tensor_collector

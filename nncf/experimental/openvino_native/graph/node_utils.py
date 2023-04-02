@@ -18,10 +18,10 @@ import openvino.runtime as ov
 
 from nncf.common.graph.graph import NNCFGraph
 from nncf.common.graph.graph import NNCFNode
-from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVAddMetatype
-from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVConvertMetatype
-from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVConstantMetatype
 from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OPERATIONS_WITH_BIAS_METATYPES
+from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVAddMetatype
+from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVConstantMetatype
+from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVConvertMetatype
 
 
 def is_node_with_bias(node: NNCFNode, nncf_graph: NNCFGraph) -> bool:
@@ -123,4 +123,4 @@ def get_result_node_name(output_name: str, port_id: int) -> str:
     :return: Name of result.
     """
 
-    return f'Result_{output_name}.{port_id}'
+    return f"Result_{output_name}.{port_id}"

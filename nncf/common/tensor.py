@@ -12,11 +12,13 @@
 """
 
 from abc import abstractmethod
-from typing import TypeVar, List, Optional
+from typing import List
+from typing import Optional
+from typing import TypeVar
 
-TensorType = TypeVar('TensorType')
-DeviceType = TypeVar('DeviceType')
-TensorElementsType = TypeVar('TensorElementsType')
+TensorType = TypeVar("TensorType")
+DeviceType = TypeVar("DeviceType")
+TensorElementsType = TypeVar("TensorElementsType")
 
 
 class NNCFTensor:
@@ -37,7 +39,7 @@ class NNCFTensor:
     @property
     def shape(self) -> List[int]:
         if self._tensor is None:
-            raise RuntimeError('Attempt to get shape of empty NNCFTensor')
+            raise RuntimeError("Attempt to get shape of empty NNCFTensor")
         return self._tensor.shape
 
     @property

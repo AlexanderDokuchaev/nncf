@@ -11,15 +11,20 @@
  limitations under the License.
 """
 
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Callable
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Union
 
+import numpy as np
 import onnx
 from onnx import numpy_helper
-import numpy as np
 
 from nncf.onnx.graph.metatypes.onnx_metatypes import ONNX_OPERATION_METATYPES
-from nncf.onnx.graph.metatypes.onnx_metatypes import OpWeightDef
 from nncf.onnx.graph.metatypes.onnx_metatypes import WEIGHT_LAYER_METATYPES
+from nncf.onnx.graph.metatypes.onnx_metatypes import OpWeightDef
 
 
 # pylint: disable=too-many-public-methods
@@ -36,8 +41,9 @@ class ONNXGraph:
     def _update_activation_tensors(self, do_shape_inference: bool = False) -> None:
         if do_shape_inference:
             self.onnx_model = onnx.shape_inference.infer_shapes(self.onnx_model)
-        self._activations_tensor_name_to_value_info = {tensor.name: tensor for tensor in
-                                                       self.onnx_model.graph.value_info}
+        self._activations_tensor_name_to_value_info = {
+            tensor.name: tensor for tensor in self.onnx_model.graph.value_info
+        }
         model_inputs_name_to_value_info = {tensor.name: tensor for tensor in self.onnx_model.graph.input}
         model_outputs_name_to_value_info = {tensor.name: tensor for tensor in self.onnx_model.graph.output}
         initializers = {tensor.name: tensor for tensor in self.onnx_model.graph.initializer}
@@ -110,8 +116,9 @@ class ONNXGraph:
         """
         return self._get_nodes_by_lambda(input_name, lambda node: node.input)
 
-    def _get_nodes_by_lambda(self, name: str, func: Callable[[onnx.NodeProto], List[onnx.NodeProto]]) -> List[
-        onnx.NodeProto]:
+    def _get_nodes_by_lambda(
+        self, name: str, func: Callable[[onnx.NodeProto], List[onnx.NodeProto]]
+    ) -> List[onnx.NodeProto]:
         output = []
         for node in self.get_all_nodes():
             if name in func(node):
@@ -129,9 +136,11 @@ class ONNXGraph:
         if self._node_name_to_node is None:
             self._update_node_names()
         if node_name in self._node_name_to_node:
-            return {'input': list(self._node_name_to_node[node_name].input),
-                    'output': list(self._node_name_to_node[node_name].output)}
-        raise RuntimeError('There is no node with the name {}'.format(node_name))
+            return {
+                "input": list(self._node_name_to_node[node_name].input),
+                "output": list(self._node_name_to_node[node_name].output),
+            }
+        raise RuntimeError("There is no node with the name {}".format(node_name))
 
     @staticmethod
     def get_input_port_id_for_node_after_input(input_name: str, to_node: onnx.NodeProto) -> int:
@@ -145,7 +154,7 @@ class ONNXGraph:
         for input_port_id, port in enumerate(to_node.input):
             if port == input_name:
                 return input_port_id
-        raise RuntimeError(f'The node {to_node} does not have input edge with the name {input_name}')
+        raise RuntimeError(f"The node {to_node} does not have input edge with the name {input_name}")
 
     @staticmethod
     def get_output_port_id_for_node_before_output(output_name: str, from_node: onnx.NodeProto) -> int:
@@ -159,7 +168,7 @@ class ONNXGraph:
         for output_port_id, port in enumerate(from_node.output):
             if port == output_name:
                 return output_port_id
-        raise RuntimeError(f'The node {from_node} does not have output edge with the name {output_name}')
+        raise RuntimeError(f"The node {from_node} does not have output edge with the name {output_name}")
 
     @staticmethod
     def get_port_ids_between_nodes(from_node: onnx.NodeProto, to_node: onnx.NodeProto) -> Dict[str, int]:
@@ -170,15 +179,15 @@ class ONNXGraph:
         :param to_node: Node, whose input is connected to 'from_node' node.
         :return: Dict{'input_port_id': input port id, 'output_port_id': output port id}
         """
-        output = {'input_port_id': None, 'output_port_id': None}
+        output = {"input_port_id": None, "output_port_id": None}
         for port_id, port in enumerate(to_node.input):
             if port in from_node.output:
-                output['input_port_id'] = port_id
+                output["input_port_id"] = port_id
         for port_id, port in enumerate(from_node.output):
             if port in to_node.input:
-                output['output_port_id'] = port_id
-        if output['output_port_id'] is None or output['input_port_id'] is None:
-            raise RuntimeError(f'The nodes {from_node.name} and {to_node.name} do not have edges between.')
+                output["output_port_id"] = port_id
+        if output["output_port_id"] is None or output["input_port_id"] is None:
+            raise RuntimeError(f"The nodes {from_node.name} and {to_node.name} do not have edges between.")
         return output
 
     def get_nodes_by_type(self, node_type: str) -> List[onnx.NodeProto]:
@@ -205,7 +214,7 @@ class ONNXGraph:
         metatype = ONNX_OPERATION_METATYPES.get_operator_metatype_by_op_name(node.op_type)
         if metatype in WEIGHT_LAYER_METATYPES:
             return metatype.weight_definitions
-        raise RuntimeError(f'The metatype {metatype} does not belong to a list of metatypes with a weight tensor.')
+        raise RuntimeError(f"The metatype {metatype} does not belong to a list of metatypes with a weight tensor.")
 
     def get_weight_port_id(self, node: onnx.NodeProto) -> int:
         """
@@ -217,7 +226,7 @@ class ONNXGraph:
         weight_definitions = self._get_weight_definitions(node)
         if weight_definitions.weight_port_id is not None:
             return weight_definitions.weight_port_id
-        raise RuntimeError(f'The metatype {node} does not have weight_port_id attribute')
+        raise RuntimeError(f"The metatype {node} does not have weight_port_id attribute")
 
     def get_weight_channel_axis(self, node: onnx.NodeProto) -> int:
         """
@@ -229,7 +238,7 @@ class ONNXGraph:
         weight_definitions = self._get_weight_definitions(node)
         if weight_definitions.weight_channel_axis is not None:
             return weight_definitions.weight_channel_axis
-        raise RuntimeError(f'The node {node} does not have weight_channel_axis attribute')
+        raise RuntimeError(f"The node {node} does not have weight_channel_axis attribute")
 
     def get_bias_tensor_port_id(self, node: onnx.NodeProto) -> int:
         """
@@ -241,7 +250,7 @@ class ONNXGraph:
         weight_definitions = self._get_weight_definitions(node)
         if weight_definitions.bias_port_id is not None:
             return weight_definitions.bias_port_id
-        raise RuntimeError(f'The node {node} does not have bias_port_id attribute')
+        raise RuntimeError(f"The node {node} does not have bias_port_id attribute")
 
     def _get_weight_tensor_with_reshape(self, node: onnx.NodeProto) -> Tuple[str, np.ndarray]:
         """
@@ -290,7 +299,7 @@ class ONNXGraph:
             if init.name == initializer_name:
                 tensor = numpy_helper.to_array(init)
                 return tensor
-        raise RuntimeError('There is no initializer with the name {}'.format(initializer_name))
+        raise RuntimeError("There is no initializer with the name {}".format(initializer_name))
 
     def has_initializer(self, initializer_name: str) -> bool:
         """
@@ -314,7 +323,7 @@ class ONNXGraph:
         for init in self.onnx_model.graph.initializer:
             if init.name == initializer_name:
                 return init
-        raise RuntimeError('There is no initializer with the name {}'.format(initializer_name))
+        raise RuntimeError("There is no initializer with the name {}".format(initializer_name))
 
     @staticmethod
     def _get_tensor_shape(tensor: Union[onnx.ValueInfoProto, onnx.TensorProto]) -> List[int]:
@@ -360,7 +369,7 @@ class ONNXGraph:
         self._update_activation_tensors(do_shape_inference=True)
         if edge_name in self._activations_tensor_name_to_value_info:
             return ONNXGraph._get_tensor_shape(self._activations_tensor_name_to_value_info[edge_name])
-        raise RuntimeError('There is no edge with the name {}'.format(edge_name))
+        raise RuntimeError("There is no edge with the name {}".format(edge_name))
 
     def get_edge_dtype(self, edge_name: str) -> int:
         """
@@ -383,7 +392,7 @@ class ONNXGraph:
             if isinstance(self._activations_tensor_name_to_value_info[edge_name], onnx.ValueInfoProto):
                 return self._activations_tensor_name_to_value_info[edge_name].type.tensor_type.elem_type
             return self._activations_tensor_name_to_value_info[edge_name].data_type
-        raise RuntimeError('There is no edge with the name {}'.format(edge_name))
+        raise RuntimeError("There is no edge with the name {}".format(edge_name))
 
     def get_edge_dtype_name(self, edge_name: str) -> str:
         """
@@ -414,7 +423,7 @@ class ONNXGraph:
         :return: All children nodes.
         """
         output = []
-        node_edges = self.get_node_edge_names(node.name)['output']
+        node_edges = self.get_node_edge_names(node.name)["output"]
         for node_edge in node_edges:
             output.extend(self.get_nodes_by_input(node_edge))
         return output
@@ -427,7 +436,7 @@ class ONNXGraph:
         :return: Weight edge name.
         """
         weight_port_id = self.get_weight_port_id(node)
-        weight_tensor_edge = self.get_node_edge_names(node.name)['input'][weight_port_id]
+        weight_tensor_edge = self.get_node_edge_names(node.name)["input"][weight_port_id]
         return weight_tensor_edge
 
     def is_node_shared(self, node: onnx.NodeProto) -> bool:

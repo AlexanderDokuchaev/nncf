@@ -11,21 +11,24 @@
  limitations under the License.
 """
 
-from typing import Callable, Any, Iterable, Optional
+from typing import Any
+from typing import Callable
+from typing import Iterable
+from typing import Optional
 
 import openvino.runtime as ov
 from openvino._offline_transformations import compress_quantize_weights_transformation
 
-from nncf.data.dataset import Dataset
 from nncf.common.logging import nncf_logger
-from nncf.common.utils.backend import get_backend
 from nncf.common.quantization.structs import QuantizationPreset
-from nncf.scopes import IgnoredScope
+from nncf.common.utils.backend import get_backend
+from nncf.data.dataset import Dataset
+from nncf.openvino.quantization.quantize import quantize_impl
 from nncf.parameters import ModelType
 from nncf.parameters import TargetDevice
-from nncf.quantization.algorithms.accuracy_control.algorithm import get_algo_backend
 from nncf.quantization.algorithms.accuracy_control.algorithm import QuantizationAccuracyRestorer
-from nncf.openvino.quantization.quantize import quantize_impl
+from nncf.quantization.algorithms.accuracy_control.algorithm import get_algo_backend
+from nncf.scopes import IgnoredScope
 
 
 def _match_const_nodes_names(initial_model: ov.Model, quantized_model: ov.Model) -> None:
@@ -37,10 +40,10 @@ def _match_const_nodes_names(initial_model: ov.Model, quantized_model: ov.Model)
     :param quantized_model_graph: Quantized model.
     """
     initial_name_to_const_map = {
-        op.get_friendly_name(): op for op in initial_model.get_ops() if op.get_type_name() == 'Constant'
+        op.get_friendly_name(): op for op in initial_model.get_ops() if op.get_type_name() == "Constant"
     }
     modified_name_to_const_map = {
-        op.get_friendly_name(): op for op in quantized_model.get_ops() if op.get_type_name() == 'Constant'
+        op.get_friendly_name(): op for op in quantized_model.get_ops() if op.get_type_name() == "Constant"
     }
 
     for initial_name in initial_name_to_const_map:
@@ -52,22 +55,33 @@ def _match_const_nodes_names(initial_model: ov.Model, quantized_model: ov.Model)
         assert num_matches == 1
 
 
-def quantize_with_accuracy_control(model: ov.Model,
-                                   calibration_dataset: Dataset,
-                                   validation_dataset: Dataset,
-                                   validation_fn: Callable[[Any, Iterable[Any]], float],
-                                   max_drop: float = 0.01,
-                                   preset: QuantizationPreset = QuantizationPreset.PERFORMANCE,
-                                   target_device: TargetDevice = TargetDevice.ANY,
-                                   subset_size: int = 300,
-                                   fast_bias_correction: bool = True,
-                                   model_type: Optional[ModelType] = None,
-                                   ignored_scope: Optional[IgnoredScope] = None) -> ov.Model:
+def quantize_with_accuracy_control(
+    model: ov.Model,
+    calibration_dataset: Dataset,
+    validation_dataset: Dataset,
+    validation_fn: Callable[[Any, Iterable[Any]], float],
+    max_drop: float = 0.01,
+    preset: QuantizationPreset = QuantizationPreset.PERFORMANCE,
+    target_device: TargetDevice = TargetDevice.ANY,
+    subset_size: int = 300,
+    fast_bias_correction: bool = True,
+    model_type: Optional[ModelType] = None,
+    ignored_scope: Optional[IgnoredScope] = None,
+) -> ov.Model:
     """
     Implementation of the `quantize_with_accuracy_control()` method for the OpenVINO backend via POT.
     """
-    quantized_model = quantize_impl(model, calibration_dataset, preset, target_device, subset_size,
-                                    fast_bias_correction, model_type, ignored_scope, compress_weights=False)
+    quantized_model = quantize_impl(
+        model,
+        calibration_dataset,
+        preset,
+        target_device,
+        subset_size,
+        fast_bias_correction,
+        model_type,
+        ignored_scope,
+        compress_weights=False,
+    )
 
     # We need to match constant names when the
     # quantized model was got using POT. For example, we have the
@@ -80,18 +94,16 @@ def quantize_with_accuracy_control(model: ov.Model,
     backend = get_backend(model)
     algo_backend = get_algo_backend(backend)
 
-    initial_metric = validation_fn(algo_backend.prepare_for_inference(model),
-                                   validation_dataset.get_data())
-    nncf_logger.info(f'Metric of initial model: {initial_metric}')
+    initial_metric = validation_fn(algo_backend.prepare_for_inference(model), validation_dataset.get_data())
+    nncf_logger.info(f"Metric of initial model: {initial_metric}")
 
-    quantized_metric = validation_fn(algo_backend.prepare_for_inference(quantized_model),
-                                     validation_dataset.get_data())
-    nncf_logger.info(f'Metric of quantized model: {quantized_metric}')
+    quantized_metric = validation_fn(algo_backend.prepare_for_inference(quantized_model), validation_dataset.get_data())
+    nncf_logger.info(f"Metric of quantized model: {quantized_metric}")
 
     accuracy_aware_loop = QuantizationAccuracyRestorer(algo_backend, max_drop=max_drop, is_native=False)
-    quantized_model = accuracy_aware_loop.restore_accuracy(model, initial_metric,
-                                                           quantized_model, quantized_metric,
-                                                           validation_dataset, validation_fn)
+    quantized_model = accuracy_aware_loop.restore_accuracy(
+        model, initial_metric, quantized_model, quantized_metric, validation_dataset, validation_fn
+    )
     compress_quantize_weights_transformation(quantized_model)
 
     return quantized_model

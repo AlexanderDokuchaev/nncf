@@ -5,9 +5,10 @@ from typing import TypeVar
 
 from nncf.common.logging import nncf_logger
 
-BaseEvaluatorType = TypeVar('BaseEvaluatorType')
-ElasticControllerType = TypeVar('ElasticControllerType')
-SearchParametersType = TypeVar('SearchParametersType')
+BaseEvaluatorType = TypeVar("BaseEvaluatorType")
+ElasticControllerType = TypeVar("ElasticControllerType")
+SearchParametersType = TypeVar("SearchParametersType")
+
 
 class BaseEvaluatorHandler:
     """
@@ -15,6 +16,7 @@ class BaseEvaluatorHandler:
     evaluator and can be used to update the evaluator's properties.
 
     """
+
     def __init__(self, evaluator: BaseEvaluatorType, elasticity_ctr: ElasticControllerType):
         """
         Initializes the evaluator handler
@@ -56,6 +58,7 @@ class AccuracyEvaluatorHandler(BaseEvaluatorHandler):
     An interface for handling accuracy evaluators
 
     """
+
     def __init__(self, accuracy_evaluator, elasticity_ctrl, ref_acc: Optional[float] = 100):
         super().__init__(accuracy_evaluator, elasticity_ctrl)
         self._ref_acc = ref_acc
@@ -86,7 +89,8 @@ class AccuracyEvaluatorHandler(BaseEvaluatorHandler):
         if self.input_model_value > self.ref_acc - 0.01 or self.input_model_value < self.ref_acc + 0.01:
             nncf_logger.warning(
                 f"Accuracy obtained from evaluation {self.input_model_value} "
-                f"differs from reference accuracy {self.ref_acc}")
+                f"differs from reference accuracy {self.ref_acc}"
+            )
             if self.ref_acc == -1:
                 nncf_logger.info("Adjusting reference accuracy to accuracy obtained from evaluation")
                 self.ref_acc = self.input_model_value

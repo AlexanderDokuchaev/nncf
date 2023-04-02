@@ -11,9 +11,11 @@
  limitations under the License.
 """
 
-import numpy as np
+from typing import List
+from typing import Optional
+from typing import Union
 
-from typing import List, Optional, Union
+import numpy as np
 
 from nncf.common.pruning.tensor_processor import NNCFPruningBaseTensorProcessor
 from nncf.common.tensor import NNCFTensor

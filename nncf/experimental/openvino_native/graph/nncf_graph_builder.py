@@ -11,7 +11,10 @@
  limitations under the License.
 """
 
-from typing import Dict, List, Type
+from typing import Dict
+from typing import List
+from typing import Type
+
 import openvino.runtime as ov
 
 from nncf.common.graph import BaseLayerAttributes
@@ -19,10 +22,9 @@ from nncf.common.graph import NNCFGraph
 from nncf.common.graph.layer_attributes import Dtype
 from nncf.common.graph.operator_metatypes import OperatorMetatype
 from nncf.common.graph.operator_metatypes import UnknownMetatype
-
-from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVConvertMetatype
-from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OV_OPERATOR_METATYPES
 from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import METATYPES_WITH_CONST_PORT_ID
+from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OV_OPERATOR_METATYPES
+from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVConvertMetatype
 from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVConvolutionBackpropDataMetatype
 from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVGroupConvolutionBackpropDataMetatype
 from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVGRUSequenceMetatype
@@ -43,22 +45,22 @@ class GraphConverter:
         :return: NNCF primitive type.
         """
         conversion_map = {
-            'f16': 'float',
-            'f32': 'float',
-            'f64': 'float',
-            'i4': 'int',
-            'i8': 'int',
-            'i32': 'int',
-            'i64': 'int',
-            'u1': 'int',
-            'u4': 'int',
-            'u8': 'int',
-            'u32': 'int',
-            'u64': 'int',
-            'boolean': 'int',
+            "f16": "float",
+            "f32": "float",
+            "f64": "float",
+            "i4": "int",
+            "i8": "int",
+            "i32": "int",
+            "i64": "int",
+            "u1": "int",
+            "u4": "int",
+            "u8": "int",
+            "u32": "int",
+            "u64": "int",
+            "boolean": "int",
         }
         if ov_dtype not in conversion_map:
-            raise NotImplementedError(f'NNCF is not yet supported OpenVINO data type: {ov_dtype}.')
+            raise NotImplementedError(f"NNCF is not yet supported OpenVINO data type: {ov_dtype}.")
         return Dtype(conversion_map[ov_dtype])
 
     @staticmethod
@@ -118,7 +120,7 @@ class GraphConverter:
                         tensor_shape=tensor_shape,
                         input_port_id=inp.get_index(),
                         output_port_id=output_port_id,
-                        dtype=Dtype(nncf_dtype)
+                        dtype=Dtype(nncf_dtype),
                     )
 
     @staticmethod
@@ -131,9 +133,7 @@ class GraphConverter:
         """
         node_type = node.get_type_name()
         metatype = GraphConverter._get_node_metatype(node)
-        graph.add_nncf_node(node_name=node.get_friendly_name(),
-                            node_type=node_type,
-                            node_metatype=metatype)
+        graph.add_nncf_node(node_name=node.get_friendly_name(), node_type=node_type, node_metatype=metatype)
 
     @staticmethod
     def create_nncf_graph(model: ov.Model) -> NNCFGraph:
@@ -147,7 +147,7 @@ class GraphConverter:
         """
         nncf_graph = NNCFGraph()
         visited = set()
-        read_value_nodes = [op for op in model.get_ops() if op.get_type_name() == 'ReadValue']
+        read_value_nodes = [op for op in model.get_ops() if op.get_type_name() == "ReadValue"]
         inference_nodes = model.get_parameters() + read_value_nodes
 
         while inference_nodes:
@@ -157,8 +157,7 @@ class GraphConverter:
                 GraphConverter._add_nncf_node(node, nncf_graph)
                 visited.add(node.get_friendly_name())
                 for out in node.outputs():
-                    for inp in sorted(out.get_target_inputs(),
-                                      key=lambda inp: inp.get_node().get_friendly_name()):
+                    for inp in sorted(out.get_target_inputs(), key=lambda inp: inp.get_node().get_friendly_name()):
                         inference_nodes.append(inp.get_node())
 
         for node in model.get_ops():
@@ -182,8 +181,8 @@ class GraphConverter:
                         continue
 
                     const_attrs[const_port_id] = {
-                        'name': const_node.get_friendly_name(),
-                        'shape': tuple(const_node.get_output_shape(0))
+                        "name": const_node.get_friendly_name(),
+                        "shape": tuple(const_node.get_output_shape(0)),
                     }
 
                 if const_attrs:

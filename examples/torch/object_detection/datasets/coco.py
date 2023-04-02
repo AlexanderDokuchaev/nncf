@@ -12,9 +12,9 @@
 """
 
 import json
+import sys
 from collections import OrderedDict
 from pathlib import Path
-import sys
 
 import cv2
 import numpy as np
@@ -24,26 +24,180 @@ from torch.utils import data
 from examples.torch.common.example_logger import logger
 
 COCO_CLASSES = (  # always index 0
-    "person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck", "boat", "traffic light",
-    "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat", "dog", "horse", "sheep", "cow", "elephant",
-    "bear", "zebra", "giraffe", "backpack", "umbrella", "handbag", "tie", "suitcase", "frisbee", "skis", "snowboard",
-    "sports ball", "kite", "baseball bat", "baseball glove", "skateboard", "surfboard", "tennis racket", "bottle",
-    "wine glass", "cup", "fork", "knife", "spoon", "bowl", "banana", "apple", "sandwich", "orange", "broccoli",
-    "carrot", "hot dog", "pizza", "donut", "cake", "chair", "couch", "potted plant", "bed", "dining table", "toilet",
-    "tv", "laptop", "mouse", "remote", "keyboard", "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator",
-    "book", "clock", "vase", "scissors", "teddy bear", "hair drier", "toothbrush")
+    "person",
+    "bicycle",
+    "car",
+    "motorcycle",
+    "airplane",
+    "bus",
+    "train",
+    "truck",
+    "boat",
+    "traffic light",
+    "fire hydrant",
+    "stop sign",
+    "parking meter",
+    "bench",
+    "bird",
+    "cat",
+    "dog",
+    "horse",
+    "sheep",
+    "cow",
+    "elephant",
+    "bear",
+    "zebra",
+    "giraffe",
+    "backpack",
+    "umbrella",
+    "handbag",
+    "tie",
+    "suitcase",
+    "frisbee",
+    "skis",
+    "snowboard",
+    "sports ball",
+    "kite",
+    "baseball bat",
+    "baseball glove",
+    "skateboard",
+    "surfboard",
+    "tennis racket",
+    "bottle",
+    "wine glass",
+    "cup",
+    "fork",
+    "knife",
+    "spoon",
+    "bowl",
+    "banana",
+    "apple",
+    "sandwich",
+    "orange",
+    "broccoli",
+    "carrot",
+    "hot dog",
+    "pizza",
+    "donut",
+    "cake",
+    "chair",
+    "couch",
+    "potted plant",
+    "bed",
+    "dining table",
+    "toilet",
+    "tv",
+    "laptop",
+    "mouse",
+    "remote",
+    "keyboard",
+    "cell phone",
+    "microwave",
+    "oven",
+    "toaster",
+    "sink",
+    "refrigerator",
+    "book",
+    "clock",
+    "vase",
+    "scissors",
+    "teddy bear",
+    "hair drier",
+    "toothbrush",
+)
 
 COCO_NAMES = (
-    "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22",
-    "23", "24", "25", "27", "28", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44",
-    "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64",
-    "65", "67", "70", "72", "73", "74", "75", "76", "77", "78", "79", "80", "81", "82", "84", "85", "86", "87", "88",
-    "89", "90"
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20",
+    "21",
+    "22",
+    "23",
+    "24",
+    "25",
+    "27",
+    "28",
+    "31",
+    "32",
+    "33",
+    "34",
+    "35",
+    "36",
+    "37",
+    "38",
+    "39",
+    "40",
+    "41",
+    "42",
+    "43",
+    "44",
+    "46",
+    "47",
+    "48",
+    "49",
+    "50",
+    "51",
+    "52",
+    "53",
+    "54",
+    "55",
+    "56",
+    "57",
+    "58",
+    "59",
+    "60",
+    "61",
+    "62",
+    "63",
+    "64",
+    "65",
+    "67",
+    "70",
+    "72",
+    "73",
+    "74",
+    "75",
+    "76",
+    "77",
+    "78",
+    "79",
+    "80",
+    "81",
+    "82",
+    "84",
+    "85",
+    "86",
+    "87",
+    "88",
+    "89",
+    "90",
 )
 
 # for making bounding boxes pretty
-COLORS = ((255, 0, 0, 128), (0, 255, 0, 128), (0, 0, 255, 128),
-          (0, 255, 255, 128), (255, 0, 255, 128), (255, 255, 0, 128))
+COLORS = (
+    (255, 0, 0, 128),
+    (0, 255, 0, 128),
+    (0, 0, 255, 128),
+    (0, 255, 255, 128),
+    (255, 0, 255, 128),
+    (255, 255, 0, 128),
+)
 
 
 def _read_coco_annotation(annotation_file, images_folder):
@@ -55,7 +209,7 @@ def _read_coco_annotation(annotation_file, images_folder):
     annotation = json_annotation["annotations"]
 
     for imgAnnotation in annotation:
-        img_path = images_folder / "{0:012d}.jpg".format(imgAnnotation['image_id'])
+        img_path = images_folder / "{0:012d}.jpg".format(imgAnnotation["image_id"])
 
         name = str(imgAnnotation["category_id"])
         label_idx = COCO_NAMES.index(name)
@@ -66,17 +220,25 @@ def _read_coco_annotation(annotation_file, images_folder):
 
         bbox[2] = bbox[0] + bbox[2]
         bbox[3] = bbox[1] + bbox[3]
-        anno_dict.setdefault(img_path.as_posix(), []).append({'bbox': bbox, 'label_idx': label_idx})
+        anno_dict.setdefault(img_path.as_posix(), []).append({"bbox": bbox, "label_idx": label_idx})
 
     return anno_dict
 
 
 class COCODataset(data.Dataset):
     classes = COCO_CLASSES
-    name = 'coco'
+    name = "coco"
 
-    def __init__(self, annotation_file, images_folder, transform=None, target_transform=None, scale_bboxes=True,
-                 return_image_info=False, rgb=True):
+    def __init__(
+        self,
+        annotation_file,
+        images_folder,
+        transform=None,
+        target_transform=None,
+        scale_bboxes=True,
+        return_image_info=False,
+        rgb=True,
+    ):
         super().__init__()
         self.rgb = rgb
         self.target_transform = target_transform
@@ -113,8 +275,8 @@ class COCODataset(data.Dataset):
         assert img is not None
         height, width, _ = img.shape
 
-        boxes = np.asarray([anno['bbox'] for anno in self.annotation[img_path]])
-        labels = np.asarray([anno['label_idx'] for anno in self.annotation[img_path]])
+        boxes = np.asarray([anno["bbox"] for anno in self.annotation[img_path]])
+        labels = np.asarray([anno["label_idx"] for anno in self.annotation[img_path]])
 
         if self.scale_bboxes:
             boxes /= np.array([width, height, width, height])
@@ -142,10 +304,10 @@ class COCODataset(data.Dataset):
         eg: ['001718', [[xmin, ymin, xmax, ymax, label_ind], ... ]]
         """
         img_path = list(self.annotation.keys())[index]
-        return img_path[img_path.rfind("/") + 1: img_path.rfind(".")], self.annotation[img_path]
+        return img_path[img_path.rfind("/") + 1 : img_path.rfind(".")], self.annotation[img_path]
 
     def get_img_names(self):
         img_names = []
         for full_name in self.annotation.keys():
-            img_names.append(full_name[full_name.rfind("/") + 1: full_name.rfind(".")])
+            img_names.append(full_name[full_name.rfind("/") + 1 : full_name.rfind(".")])
         return img_names

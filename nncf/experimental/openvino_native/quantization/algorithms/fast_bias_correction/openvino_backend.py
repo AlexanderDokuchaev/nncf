@@ -11,35 +11,37 @@
  limitations under the License.
 """
 
-from typing import Dict, List, Tuple, Optional
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
 
 import numpy as np
 import openvino.runtime as ov
 
-from nncf.common.graph import NNCFGraph, NNCFNode
+from nncf.common.graph import NNCFGraph
+from nncf.common.graph import NNCFNode
 from nncf.common.graph.transformations.commands import TargetType
 from nncf.common.tensor_statistics.collectors import ReductionShape
 from nncf.common.utils.backend import BackendType
 from nncf.common.utils.registry import Registry
-
-from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OV_OPERATOR_METATYPES
 from nncf.experimental.openvino_native.graph.metatypes.common import FAKE_QUANTIZE_OPERATIONS
+from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OV_OPERATOR_METATYPES
+from nncf.experimental.openvino_native.graph.node_utils import get_bias_value
+from nncf.experimental.openvino_native.graph.node_utils import is_node_with_bias
+from nncf.experimental.openvino_native.graph.transformations.command_creation import OVCommandCreator
 from nncf.experimental.openvino_native.graph.transformations.commands import OVBiasCorrectionCommand
 from nncf.experimental.openvino_native.graph.transformations.commands import OVModelExtractionCommand
 from nncf.experimental.openvino_native.graph.transformations.commands import OVTargetPoint
 from nncf.experimental.openvino_native.statistics.collectors import OVMeanStatisticCollector
 from nncf.experimental.openvino_native.statistics.collectors import OVNNCFCollectorTensorProcessor
 from nncf.experimental.openvino_native.tensor import OVNNCFTensor
-from nncf.experimental.openvino_native.graph.node_utils import get_bias_value
-from nncf.experimental.openvino_native.graph.node_utils import is_node_with_bias
-from nncf.experimental.openvino_native.graph.transformations.command_creation import OVCommandCreator
 from nncf.quantization.algorithms.fast_bias_correction.backend import ALGO_BACKENDS
 from nncf.quantization.algorithms.fast_bias_correction.backend import FastBiasCorrectionAlgoBackend
 
 
 @ALGO_BACKENDS.register(BackendType.OPENVINO)
 class OVFastBiasCorrectionAlgoBackend(FastBiasCorrectionAlgoBackend):
-
     @property
     def operation_metatypes(self) -> Registry:
         return OV_OPERATOR_METATYPES
@@ -49,15 +51,13 @@ class OVFastBiasCorrectionAlgoBackend(FastBiasCorrectionAlgoBackend):
         return OVNNCFCollectorTensorProcessor()
 
     @staticmethod
-    def target_point(target_type: TargetType,
-                     target_node_name: str,
-                     port_id: int) -> OVTargetPoint:
+    def target_point(target_type: TargetType, target_node_name: str, port_id: int) -> OVTargetPoint:
         return OVTargetPoint(target_type, target_node_name, port_id)
 
     @staticmethod
-    def create_bias_correction_command(node: NNCFNode,
-                                       bias_value: np.ndarray,
-                                       nncf_graph: NNCFGraph) -> OVBiasCorrectionCommand:
+    def create_bias_correction_command(
+        node: NNCFNode, bias_value: np.ndarray, nncf_graph: NNCFGraph
+    ) -> OVBiasCorrectionCommand:
         return OVCommandCreator.create_command_to_update_bias(node, bias_value, nncf_graph)
 
     @staticmethod
@@ -65,9 +65,9 @@ class OVFastBiasCorrectionAlgoBackend(FastBiasCorrectionAlgoBackend):
         return OVModelExtractionCommand(inputs, outputs)
 
     @staticmethod
-    def mean_statistic_collector(reduction_shape: ReductionShape,
-                                 num_samples: Optional[int] = None,
-                                 window_size: Optional[int] = None) -> OVMeanStatisticCollector:
+    def mean_statistic_collector(
+        reduction_shape: ReductionShape, num_samples: Optional[int] = None, window_size: Optional[int] = None
+    ) -> OVMeanStatisticCollector:
         return OVMeanStatisticCollector(reduction_shape, num_samples, window_size)
 
     @staticmethod

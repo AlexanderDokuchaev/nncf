@@ -10,7 +10,8 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-from typing import Callable, Dict
+from typing import Callable
+from typing import Dict
 
 from nncf.common.graph.patterns.patterns import GraphPattern
 from nncf.common.graph.patterns.patterns import HWFusedPatterns
@@ -34,18 +35,18 @@ class PatternsManager:
         :return: Dictionary with the PatternNames instance as keys and callable as value.
         """
         if backend == BackendType.ONNX:
-            from nncf.onnx.hardware.fused_patterns import \
-                ONNX_HW_FUSED_PATTERNS
+            from nncf.onnx.hardware.fused_patterns import ONNX_HW_FUSED_PATTERNS
+
             return ONNX_HW_FUSED_PATTERNS.registry_dict
         if backend == BackendType.OPENVINO:
-            from nncf.experimental.openvino_native.hardware.fused_patterns import \
-                OPENVINO_HW_FUSED_PATTERNS
+            from nncf.experimental.openvino_native.hardware.fused_patterns import OPENVINO_HW_FUSED_PATTERNS
+
             return OPENVINO_HW_FUSED_PATTERNS.registry_dict
         if backend == BackendType.TORCH:
-            from nncf.torch.hardware.fused_patterns import \
-                PT_HW_FUSED_PATTERNS
+            from nncf.torch.hardware.fused_patterns import PT_HW_FUSED_PATTERNS
+
             return PT_HW_FUSED_PATTERNS.registry_dict
-        raise ValueError(f'Hardware-fused patterns not implemented for {backend} backend.')
+        raise ValueError(f"Hardware-fused patterns not implemented for {backend} backend.")
 
     @staticmethod
     def get_full_pattern_graph(backend: BackendType, device: TargetDevice) -> GraphPattern:

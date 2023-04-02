@@ -25,7 +25,7 @@ from nncf.torch.nncf_network import NNCFNetwork
 
 
 class EControllerStateNames:
-    MULTI_ELASTICITY_HANDLER_STATE = 'multi_elasticity_handler_state'
+    MULTI_ELASTICITY_HANDLER_STATE = "multi_elasticity_handler_state"
 
 
 class ElasticityController(PTCompressionAlgorithmController):
@@ -33,6 +33,7 @@ class ElasticityController(PTCompressionAlgorithmController):
     Serves as a handle to the additional modules, parameters and hooks inserted
     into the original uncompressed model in order to control elasticity in the model.
     """
+
     _ec_state_names = EControllerStateNames
 
     def __init__(self, target_model: NNCFNetwork, algo_config: Dict, multi_elasticity_handler: MultiElasticityHandler):

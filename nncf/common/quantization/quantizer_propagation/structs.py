@@ -54,8 +54,13 @@ class PropagatingQuantizer:
     attributes etc.)
     """
 
-    def __init__(self, id_: int, quant_configs: List[QuantizerConfig], init_location_node_key: str,
-                 unified_scale_type: Optional[UnifiedScaleType] = None):
+    def __init__(
+        self,
+        id_: int,
+        quant_configs: List[QuantizerConfig],
+        init_location_node_key: str,
+        unified_scale_type: Optional[UnifiedScaleType] = None,
+    ):
         """
         :param id_: The unique identifier of the new propagating quantizer.
         :param quant_configs: The quantizer configurations that this quantizer currently allows.
@@ -91,12 +96,13 @@ class QuantizerPropagationStateGraphNodeType(Enum):
 
 
 class SharedAffectedOpsPropagatingQuantizerGroup:
-    """ Combines propagating quantizers that share affected operations """
+    """Combines propagating quantizers that share affected operations"""
+
     def __init__(self, affecting_prop_quants: Set[PropagatingQuantizer], affected_op_node_keys: Set[str]):
         self.affecting_prop_quants = affecting_prop_quants  # type: Set[PropagatingQuantizer]
         self.affected_op_node_keys = affected_op_node_keys  # type: Set[str]
 
-    def update(self, other: 'SharedAffectedOpsPropagatingQuantizerGroup'):
+    def update(self, other: "SharedAffectedOpsPropagatingQuantizerGroup"):
         self.affected_op_node_keys.update(other.affected_op_node_keys)
         self.affecting_prop_quants.update(other.affecting_prop_quants)
 
