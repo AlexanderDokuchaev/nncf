@@ -25,7 +25,7 @@ from nncf.api.statistics import Statistics
 from nncf.common.graph.transformations.layout import TransformationLayout
 from nncf.common.utils.backend import copy_model
 
-TModel = TypeVar('TModel')
+TModel = TypeVar("TModel")
 
 
 class CompressionLoss(ABC):
@@ -136,7 +136,7 @@ class CompressionStage(IntEnum):
     PARTIALLY_COMPRESSED = 1
     FULLY_COMPRESSED = 2
 
-    def __add__(self, other: 'CompressionStage') -> 'CompressionStage':
+    def __add__(self, other: "CompressionStage") -> "CompressionStage":
         """
         Defines compression stage of a composite compression controller, consist of
         two algorithms, where `self` is the compression stage of the first algorithm
@@ -283,12 +283,14 @@ class CompressionAlgorithmController(ABC):
         return self.strip_model(self.model, do_copy)
 
     @abstractmethod
-    def export_model(self,
-                     save_path: str,
-                     save_format: Optional[str] = None,
-                     input_names: Optional[List[str]] = None,
-                     output_names: Optional[List[str]] = None,
-                     model_args: Optional[Tuple[Any, ...]] = None) -> None:
+    def export_model(
+        self,
+        save_path: str,
+        save_format: Optional[str] = None,
+        input_names: Optional[List[str]] = None,
+        output_names: Optional[List[str]] = None,
+        model_args: Optional[Tuple[Any, ...]] = None,
+    ) -> None:
         """
         Exports the compressed model to the specified format for deployment.
 

@@ -1,5 +1,6 @@
 import math
 from contextlib import contextmanager
+from functools import partial
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -7,7 +8,6 @@ from typing import Optional
 from typing import Tuple
 
 import torch
-from functools import partial
 from torch.nn.modules.loss import _Loss
 from torch.utils.data import DataLoader
 
@@ -18,10 +18,14 @@ from nncf.config.structures import BNAdaptationInitArgs
 from nncf.config.structures import ModelEvaluationArgs
 from nncf.config.structures import QuantizationRangeInitArgs
 from nncf.torch.nested_objects_traversal import objwalk
-from nncf.torch.structures import AutoQPrecisionInitArgs, LeGRInitArgs, DistributedCallbacksArgs
+from nncf.torch.structures import AutoQPrecisionInitArgs
+from nncf.torch.structures import DistributedCallbacksArgs
+from nncf.torch.structures import LeGRInitArgs
 from nncf.torch.structures import QuantizationPrecisionInitArgs
+from nncf.torch.utils import default_distributed_unwrapper
+from nncf.torch.utils import default_distributed_wrapper
 from nncf.torch.utils import get_model_device
-from nncf.torch.utils import is_tensor, default_distributed_wrapper, default_distributed_unwrapper
+from nncf.torch.utils import is_tensor
 
 
 class PTInitializingDataLoader(NNCFDataLoader):
@@ -62,7 +66,6 @@ class PTInitializingDataLoader(NNCFDataLoader):
 
 
 class DefaultInitializingDataLoader(PTInitializingDataLoader):
-
     def get_inputs(self, dataloader_output: Any) -> Tuple[Tuple, Dict]:
         return (dataloader_output[0],), {}
 
@@ -84,7 +87,8 @@ def wrap_dataloader_for_init(data_loader) -> PTInitializingDataLoader:
             "PTInitializingDataLoader that returns a general (args, kwargs) tuple for your "
             "model to be called with at each __next__ call.\n"
             "See https://github.com/openvinotoolkit/nncf/blob/develop/docs/FAQ.md#pt_init_dataloader for "
-            "an example of how to do this this in your code.")
+            "an example of how to do this this in your code."
+        )
     return data_loader
 
 
@@ -117,13 +121,13 @@ class DataLoaderBaseRunner:
     def __init__(self, model, init_device: Optional[str]):
         self.model = model
         self.init_device = init_device
-        self.progressbar_description = 'Algorithm initialization'
+        self.progressbar_description = "Algorithm initialization"
 
     def _run_model_inference(self, data_loader, num_init_steps, device):
         for i, loaded_item in ProgressBar(
-                enumerate(data_loader),
-                total=num_init_steps,
-                desc=self.progressbar_description,
+            enumerate(data_loader),
+            total=num_init_steps,
+            desc=self.progressbar_description,
         ):
             if num_init_steps is not None and i >= num_init_steps:
                 break
@@ -169,16 +173,21 @@ class SimpleDataLoaderRunner(DataLoaderBaseRunner):
 class DataLoaderBNAdaptationRunner(DataLoaderBaseRunner):
     def __init__(self, model, init_device: str):
         super().__init__(model, init_device)
-        self.progressbar_description = 'BatchNorm statistics adaptation'
+        self.progressbar_description = "BatchNorm statistics adaptation"
         self.original_momenta_values = {}
         self.original_training_state = {}
 
     @staticmethod
     def _apply_to_batchnorms(func):
         def func_apply_to_bns(module):
-            if isinstance(module, (torch.nn.modules.batchnorm.BatchNorm1d,
-                                   torch.nn.modules.batchnorm.BatchNorm2d,
-                                   torch.nn.modules.batchnorm.BatchNorm3d)):
+            if isinstance(
+                module,
+                (
+                    torch.nn.modules.batchnorm.BatchNorm1d,
+                    torch.nn.modules.batchnorm.BatchNorm2d,
+                    torch.nn.modules.batchnorm.BatchNorm3d,
+                ),
+            ):
                 func(module)
 
         return func_apply_to_bns
@@ -204,9 +213,7 @@ class DataLoaderBNAdaptationRunner(DataLoaderBaseRunner):
     def _run_model_inference(self, data_loader, num_init_steps, device):
         with self._bn_training_state_switcher():
             for i, loaded_item in ProgressBar(
-                    enumerate(data_loader),
-                    total=num_init_steps,
-                    desc=self.progressbar_description
+                enumerate(data_loader), total=num_init_steps, desc=self.progressbar_description
             ):
                 if num_init_steps is not None and i >= num_init_steps:
                     break
@@ -224,62 +231,78 @@ def default_criterion_fn(outputs: Any, target: Any, criterion: Any) -> torch.Ten
     return criterion(outputs, target)
 
 
-def register_default_init_args(nncf_config: 'NNCFConfig',
-                               train_loader: torch.utils.data.DataLoader,
-                               criterion: _Loss = None,
-                               criterion_fn: Callable[[Any, Any, _Loss], torch.Tensor] = None,
-                               train_steps_fn: Callable[[torch.utils.data.DataLoader, torch.nn.Module,
-                                                         torch.optim.Optimizer, 'CompressionAlgorithmController',
-                                                         Optional[int]], type(None)] = None,
-                               validate_fn: Callable[[torch.nn.Module, torch.utils.data.DataLoader],
-                                                     Tuple[float, float]] = None,
-                               val_loader: torch.utils.data.DataLoader = None,
-                               autoq_eval_fn: Callable[[torch.nn.Module, torch.utils.data.DataLoader], float] = None,
-                               model_eval_fn: Callable[[torch.nn.Module, torch.utils.data.DataLoader], float] = None,
-                               distributed_callbacks: Tuple[Callable, Callable] = None,
-                               execution_parameters: 'ExecutionParameters' = None,
-                               legr_train_optimizer: torch.optim.Optimizer = None,
-                               device: str = None, ) -> 'NNCFConfig':
-    nncf_config.register_extra_structs([QuantizationRangeInitArgs(data_loader=wrap_dataloader_for_init(train_loader),
-                                                                  device=device),
-                                        BNAdaptationInitArgs(data_loader=wrap_dataloader_for_init(train_loader),
-                                                             device=device),
-
-                                        ])
+def register_default_init_args(
+    nncf_config: "NNCFConfig",
+    train_loader: torch.utils.data.DataLoader,
+    criterion: _Loss = None,
+    criterion_fn: Callable[[Any, Any, _Loss], torch.Tensor] = None,
+    train_steps_fn: Callable[
+        [
+            torch.utils.data.DataLoader,
+            torch.nn.Module,
+            torch.optim.Optimizer,
+            "CompressionAlgorithmController",
+            Optional[int],
+        ],
+        type(None),
+    ] = None,
+    validate_fn: Callable[[torch.nn.Module, torch.utils.data.DataLoader], Tuple[float, float]] = None,
+    val_loader: torch.utils.data.DataLoader = None,
+    autoq_eval_fn: Callable[[torch.nn.Module, torch.utils.data.DataLoader], float] = None,
+    model_eval_fn: Callable[[torch.nn.Module, torch.utils.data.DataLoader], float] = None,
+    distributed_callbacks: Tuple[Callable, Callable] = None,
+    execution_parameters: "ExecutionParameters" = None,
+    legr_train_optimizer: torch.optim.Optimizer = None,
+    device: str = None,
+) -> "NNCFConfig":
+    nncf_config.register_extra_structs(
+        [
+            QuantizationRangeInitArgs(data_loader=wrap_dataloader_for_init(train_loader), device=device),
+            BNAdaptationInitArgs(data_loader=wrap_dataloader_for_init(train_loader), device=device),
+        ]
+    )
     if train_loader and train_steps_fn and val_loader and validate_fn:
-        nncf_config.register_extra_structs([LeGRInitArgs(
-            train_loader=train_loader,
-            train_fn=train_steps_fn,
-            val_loader=val_loader,
-            val_fn=validate_fn,
-            train_optimizer=legr_train_optimizer,
-            nncf_config=nncf_config,
-        )])
+        nncf_config.register_extra_structs(
+            [
+                LeGRInitArgs(
+                    train_loader=train_loader,
+                    train_fn=train_steps_fn,
+                    val_loader=val_loader,
+                    val_fn=validate_fn,
+                    train_optimizer=legr_train_optimizer,
+                    nncf_config=nncf_config,
+                )
+            ]
+        )
 
     if criterion is not None:
         if not criterion_fn:
             criterion_fn = default_criterion_fn
-        nncf_config.register_extra_structs([QuantizationPrecisionInitArgs(criterion_fn=criterion_fn,
-                                                                          criterion=criterion,
-                                                                          data_loader=train_loader,
-                                                                          device=device)])
+        nncf_config.register_extra_structs(
+            [
+                QuantizationPrecisionInitArgs(
+                    criterion_fn=criterion_fn, criterion=criterion, data_loader=train_loader, device=device
+                )
+            ]
+        )
 
     if autoq_eval_fn is not None:
         if not val_loader:
             val_loader = train_loader
-        nncf_config.register_extra_structs([AutoQPrecisionInitArgs(data_loader=val_loader,
-                                                                   eval_fn=autoq_eval_fn,
-                                                                   nncf_config=nncf_config)])
+        nncf_config.register_extra_structs(
+            [AutoQPrecisionInitArgs(data_loader=val_loader, eval_fn=autoq_eval_fn, nncf_config=nncf_config)]
+        )
 
     if model_eval_fn is not None:
         nncf_config.register_extra_structs([ModelEvaluationArgs(eval_fn=model_eval_fn)])
 
     if distributed_callbacks is None:
-        distributed_callbacks = (partial(default_distributed_wrapper,
-                                         execution_parameters=execution_parameters),
-                                 default_distributed_unwrapper)
+        distributed_callbacks = (
+            partial(default_distributed_wrapper, execution_parameters=execution_parameters),
+            default_distributed_unwrapper,
+        )
     else:
-        nncf_logger.info('Utilizing user-provided distributed training wrappers.')
+        nncf_logger.info("Utilizing user-provided distributed training wrappers.")
 
     nncf_config.register_extra_structs([DistributedCallbacksArgs(*distributed_callbacks)])
     return nncf_config

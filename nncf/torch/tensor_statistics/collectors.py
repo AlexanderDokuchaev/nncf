@@ -11,27 +11,29 @@
  limitations under the License.
 """
 
-from typing import Union, List, Deque
+from typing import Deque
+from typing import List
+from typing import Union
 
 import torch
 
 from nncf.common.tensor import NNCFTensor
 from nncf.common.tensor import TensorElementsType
-from nncf.common.tensor_statistics.collectors import MinMaxStatisticCollector
-from nncf.common.tensor_statistics.collectors import NNCFCollectorTensorProcessor
-from nncf.common.tensor_statistics.collectors import MedianMADStatisticCollector
-from nncf.common.tensor_statistics.collectors import PercentileStatisticCollector
-from nncf.common.tensor_statistics.collectors import MeanPercentileStatisticCollector
-from nncf.common.tensor_statistics.collectors import MixedMinMaxStatisticCollector
 from nncf.common.tensor_statistics.collectors import MeanMinMaxStatisticCollector
+from nncf.common.tensor_statistics.collectors import MeanPercentileStatisticCollector
+from nncf.common.tensor_statistics.collectors import MedianMADStatisticCollector
+from nncf.common.tensor_statistics.collectors import MinMaxStatisticCollector
+from nncf.common.tensor_statistics.collectors import MixedMinMaxStatisticCollector
+from nncf.common.tensor_statistics.collectors import NNCFCollectorTensorProcessor
+from nncf.common.tensor_statistics.collectors import PercentileStatisticCollector
 from nncf.common.tensor_statistics.collectors import ReductionShape
 from nncf.common.tensor_statistics.reduction import np_percentile_reduce_like
-from nncf.torch.tensor_statistics.reduction import  expand_like
-from nncf.torch.tensor_statistics.statistics import PTMinMaxTensorStatistic
-from nncf.torch.tensor_statistics.statistics import PTMedianMADTensorStatistic
-from nncf.torch.tensor_statistics.statistics import PTPercentileTensorStatistic
 from nncf.torch.dynamic_graph.context import no_nncf_trace
 from nncf.torch.tensor import PTNNCFTensor
+from nncf.torch.tensor_statistics.reduction import expand_like
+from nncf.torch.tensor_statistics.statistics import PTMedianMADTensorStatistic
+from nncf.torch.tensor_statistics.statistics import PTMinMaxTensorStatistic
+from nncf.torch.tensor_statistics.statistics import PTPercentileTensorStatistic
 
 
 class PTNNCFCollectorTensorProcessor(NNCFCollectorTensorProcessor):
@@ -71,7 +73,7 @@ class PTNNCFCollectorTensorProcessor(NNCFCollectorTensorProcessor):
     @staticmethod
     def unstack(x: NNCFTensor, axis: int = 0) -> List[NNCFTensor]:
         tensor = x.tensor
-        if list(tensor.shape) == []: #pylint: disable=C1803
+        if list(tensor.shape) == []:  # pylint: disable=C1803
             tensor = tensor.unsqueeze(0)
         tensor_list = torch.unbind(tensor, dim=axis)
         return [PTNNCFTensor(t) for t in tensor_list]
@@ -82,8 +84,9 @@ class PTNNCFCollectorTensorProcessor(NNCFCollectorTensorProcessor):
 
 
 class PTMinMaxStatisticCollector(MinMaxStatisticCollector):
-    def __init__(self, use_abs_max: bool, reduction_shape: ReductionShape, output_shape: ReductionShape,
-                 num_samples: int = None):
+    def __init__(
+        self, use_abs_max: bool, reduction_shape: ReductionShape, output_shape: ReductionShape, num_samples: int = None
+    ):
         super().__init__(use_abs_max, reduction_shape, num_samples)
         self._output_shape = output_shape
 
@@ -102,17 +105,26 @@ class PTMinMaxStatisticCollector(MinMaxStatisticCollector):
 
 
 class PTMixedMinMaxStatisticCollector(MixedMinMaxStatisticCollector):
-    def __init__(self,
-                 use_per_sample_stats: bool,
-                 use_abs_max: bool,
-                 use_means_of_mins: bool,
-                 use_means_of_maxs: bool,
-                 reduction_shape: ReductionShape,
-                 output_shape: ReductionShape,
-                 num_samples: int = None,
-                 window_size: int = None):
-        super().__init__(use_per_sample_stats, use_abs_max, use_means_of_mins,
-                         use_means_of_maxs, reduction_shape, num_samples, window_size)
+    def __init__(
+        self,
+        use_per_sample_stats: bool,
+        use_abs_max: bool,
+        use_means_of_mins: bool,
+        use_means_of_maxs: bool,
+        reduction_shape: ReductionShape,
+        output_shape: ReductionShape,
+        num_samples: int = None,
+        window_size: int = None,
+    ):
+        super().__init__(
+            use_per_sample_stats,
+            use_abs_max,
+            use_means_of_mins,
+            use_means_of_maxs,
+            reduction_shape,
+            num_samples,
+            window_size,
+        )
         self._output_shape = output_shape
 
     @staticmethod
@@ -130,15 +142,16 @@ class PTMixedMinMaxStatisticCollector(MixedMinMaxStatisticCollector):
 
 
 class PTMeanMinMaxStatisticCollector(MeanMinMaxStatisticCollector):
-    def __init__(self,
-                 use_per_sample_stats: bool,
-                 use_abs_max: bool,
-                 reduction_shape: ReductionShape,
-                 output_shape: ReductionShape,
-                 num_samples: int = None,
-                 window_size: int = None):
-        super().__init__(use_per_sample_stats, use_abs_max, reduction_shape,
-                                                             num_samples, window_size)
+    def __init__(
+        self,
+        use_per_sample_stats: bool,
+        use_abs_max: bool,
+        reduction_shape: ReductionShape,
+        output_shape: ReductionShape,
+        num_samples: int = None,
+        window_size: int = None,
+    ):
+        super().__init__(use_per_sample_stats, use_abs_max, reduction_shape, num_samples, window_size)
         self._output_shape = output_shape
 
     @staticmethod

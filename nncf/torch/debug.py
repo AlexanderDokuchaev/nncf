@@ -10,9 +10,11 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-from typing import List, Dict
+from typing import Dict
+from typing import List
 
 from torch.nn import Module
+
 from nncf.common.logging import nncf_logger
 
 
@@ -62,11 +64,11 @@ class DebugInterface:
 
 
 def debuggable_forward(forward_func):
-    def decorated(self: 'NNCFNetwork', *args, **kwargs):
-        if hasattr(self, 'nncf') and self.nncf.debug_interface is not None:
+    def decorated(self: "NNCFNetwork", *args, **kwargs):
+        if hasattr(self, "nncf") and self.nncf.debug_interface is not None:
             self.nncf.debug_interface.pre_forward_actions(module=self)
         retval = forward_func(self, *args, **kwargs)
-        if hasattr(self, 'nncf') and self.nncf.debug_interface is not None:
+        if hasattr(self, "nncf") and self.nncf.debug_interface is not None:
             self.nncf.debug_interface.post_forward_actions(module=self)
         return retval
 
@@ -77,10 +79,10 @@ class CombinedDebugInterface(DebugInterface):
     def __init__(self):
         self._interfaces = []  # type: List[DebugInterface]
 
-    def add_interface(self, interface: 'DebugInterface'):
+    def add_interface(self, interface: "DebugInterface"):
         self._interfaces.append(interface)
 
-    def init_actual(self, owner_model: 'NNCFNetwork'):
+    def init_actual(self, owner_model: "NNCFNetwork"):
         for interface in self._interfaces:
             interface.init_actual(owner_model)
 

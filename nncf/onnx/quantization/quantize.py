@@ -15,42 +15,48 @@ from typing import Optional
 
 import onnx
 
+from nncf.common.logging.logger import nncf_logger
+from nncf.common.quantization.structs import QuantizationPreset
 from nncf.data import Dataset
-from nncf.quantization.telemetry_extractors import CompressionStartedWithQuantizeApi
-from nncf.scopes import IgnoredScope
 from nncf.parameters import ModelType
 from nncf.parameters import TargetDevice
-from nncf.common.quantization.structs import QuantizationPreset
+from nncf.quantization.algorithms.definitions import Granularity
 from nncf.quantization.algorithms.post_training.algorithm import PostTrainingQuantization
 from nncf.quantization.algorithms.post_training.algorithm import PostTrainingQuantizationParameters
-from nncf.quantization.algorithms.definitions import Granularity
+from nncf.quantization.telemetry_extractors import CompressionStartedWithQuantizeApi
+from nncf.scopes import IgnoredScope
 from nncf.telemetry import tracked_function
 from nncf.telemetry.events import NNCF_ONNX_CATEGORY
-from nncf.common.logging.logger import nncf_logger
 
 
 @tracked_function(NNCF_ONNX_CATEGORY, [CompressionStartedWithQuantizeApi(), "target_device", "preset"])
-def quantize_impl(model: onnx.ModelProto,
-                  calibration_dataset: Dataset,
-                  preset: QuantizationPreset,
-                  target_device: TargetDevice,
-                  subset_size: int,
-                  fast_bias_correction: bool,
-                  model_type: Optional[ModelType] = None,
-                  ignored_scope: Optional[IgnoredScope] = None) -> onnx.ModelProto:
+def quantize_impl(
+    model: onnx.ModelProto,
+    calibration_dataset: Dataset,
+    preset: QuantizationPreset,
+    target_device: TargetDevice,
+    subset_size: int,
+    fast_bias_correction: bool,
+    model_type: Optional[ModelType] = None,
+    ignored_scope: Optional[IgnoredScope] = None,
+) -> onnx.ModelProto:
     """
     Implementation of the `quantize()` method for the ONNX backend.
     """
     additional_params = {}
     if target_device == TargetDevice.CPU_SPR:
-        raise RuntimeError('target_device == CPU_SPR is not supported.')
+        raise RuntimeError("target_device == CPU_SPR is not supported.")
     if model.opset_import[0].version < 10:
-        raise RuntimeError('ONNX models with opset version < 10 do not support quantization.')
+        raise RuntimeError("ONNX models with opset version < 10 do not support quantization.")
     if model.opset_import[0].version < 13:
-        nncf_logger.warning('ONNX models with 10 < opset version < 13 do not support per-channel quantization.'
-                            ' Per-tensor quantization will be applied.')
-        additional_params = {'weight_granularity': Granularity.PERTENSOR,
-                             'activation_granularity': Granularity.PERTENSOR}
+        nncf_logger.warning(
+            "ONNX models with 10 < opset version < 13 do not support per-channel quantization."
+            " Per-tensor quantization will be applied."
+        )
+        additional_params = {
+            "weight_granularity": Granularity.PERTENSOR,
+            "activation_granularity": Granularity.PERTENSOR,
+        }
 
     quantization_parameters = PostTrainingQuantizationParameters(
         preset=preset,

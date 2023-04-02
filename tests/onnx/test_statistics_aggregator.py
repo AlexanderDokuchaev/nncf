@@ -11,22 +11,20 @@
  limitations under the License.
 """
 
-import pytest
 import numpy as np
+import pytest
 
 from nncf import Dataset
-from nncf.quantization.algorithms.min_max.onnx_backend import ONNXMinMaxAlgoBackend
+from nncf.common.graph.transformations.commands import TargetType
 from nncf.onnx.graph.transformations.commands import ONNXTargetPoint
 from nncf.onnx.statistics.aggregator import ONNXStatisticsAggregator
-from nncf.common.graph.transformations.commands import TargetType
-
-from tests.onnx.models import IdentityConvolutionalModel
+from nncf.quantization.algorithms.min_max.onnx_backend import ONNXMinMaxAlgoBackend
 from tests.common.test_statistics_aggregator import TemplateTestStatisticsAggregator
+from tests.onnx.models import IdentityConvolutionalModel
 
-
-INPUT_NAME = 'X'
-IDENTITY_NODE_NAME = 'Identity'
-CONV_NODE_NAME = 'Conv1'
+INPUT_NAME = "X"
+IDENTITY_NODE_NAME = "Identity"
+CONV_NODE_NAME = "Conv1"
 INPUT_SHAPE = [3, 3, 3]
 
 
@@ -36,11 +34,9 @@ class TestStatisticsAggregator(TemplateTestStatisticsAggregator):
 
     def get_backend_model(self, dataset_samples):
         conv_w = self.dataset_samples_to_conv_w(dataset_samples[0])
-        return IdentityConvolutionalModel(input_shape=[1] + INPUT_SHAPE,
-                                          inp_ch=3,
-                                          out_ch=3,
-                                          kernel_size= 3,
-                                          conv_w=conv_w).onnx_model
+        return IdentityConvolutionalModel(
+            input_shape=[1] + INPUT_SHAPE, inp_ch=3, out_ch=3, kernel_size=3, conv_w=conv_w
+        ).onnx_model
 
     def get_statistics_aggregator(self, dataset):
         return ONNXStatisticsAggregator(dataset)
@@ -66,8 +62,8 @@ class TestStatisticsAggregator(TemplateTestStatisticsAggregator):
         dataset_samples = [np.zeros(input_shape), np.ones(input_shape)]
 
         for i, value in enumerate(dataset_values):
-            dataset_samples[0][i, 0, 0] = value['max']
-            dataset_samples[0][i, 0, 1] = value['min']
+            dataset_samples[0][i, 0, 0] = value["max"]
+            dataset_samples[0][i, 0, 1] = value["min"]
 
         return dataset_samples
 

@@ -13,6 +13,7 @@
 
 from enum import Enum
 
+
 class TargetDevice(Enum):
     """
     Describes the target device the specificity of which will be taken
@@ -25,11 +26,11 @@ class TargetDevice(Enum):
     :param VPU:
     """
 
-    ANY = 'ANY'
-    CPU = 'CPU'
-    GPU = 'GPU'
-    VPU = 'VPU'
-    CPU_SPR = 'CPU_SPR'
+    ANY = "ANY"
+    CPU = "CPU"
+    GPU = "GPU"
+    VPU = "VPU"
+    CPU_SPR = "CPU_SPR"
 
 
 class ModelType(Enum):
@@ -41,4 +42,4 @@ class ModelType(Enum):
         (https://arxiv.org/pdf/1706.03762.pdf)
     """
 
-    TRANSFORMER = 'transformer'
+    TRANSFORMER = "transformer"

@@ -10,12 +10,12 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
+import os
 import signal
 import subprocess
 import sys
 import threading
 import time
-import os
 
 
 class Command:
@@ -41,22 +41,30 @@ class Command:
             if sys.platform != "win32":
                 os.killpg(pid, signal.SIGKILL)
             else:
-                subprocess.call(['taskkill', '/F', '/T', '/PID', str(pid)])
+                subprocess.call(["taskkill", "/F", "/T", "/PID", str(pid)])
         except OSError as err:
             print(err)
 
     def run(self, timeout=3600, assert_returncode_zero=True):
         print(f"Running command: {self.cmd}")
+
         def target():
             start_time = time.time()
-            with subprocess.Popen(self.cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
-                                            bufsize=1, cwd=self.path, **self.kwargs) as p:
+            with subprocess.Popen(
+                self.cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                shell=True,
+                bufsize=1,
+                cwd=self.path,
+                **self.kwargs,
+            ) as p:
                 self.process = p
                 self.timeout = False
 
                 self.output = []
                 for line in self.process.stdout:
-                    line = line.decode('utf-8')
+                    line = line.decode("utf-8")
                     self.output.append(line)
                     sys.stdout.write(line)
 
@@ -84,8 +92,8 @@ class Command:
         print("Process returncode = " + str(returncode))
         if assert_returncode_zero:
             assert returncode == 0, "Process exited with a non-zero exit code {}; output:{}".format(
-                returncode,
-                "".join(self.output))
+                returncode, "".join(self.output)
+            )
         return returncode
 
     def get_execution_time(self):

@@ -1,4 +1,3 @@
-
 """
  Copyright (c) 2023 Intel Corporation
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,20 +14,21 @@
 import pytest
 from torch import nn
 
-from nncf.scopes import IgnoredScope
-from nncf.parameters import TargetDevice
 from nncf.common.graph.patterns import GraphPattern
+from nncf.parameters import TargetDevice
+from nncf.quantization.algorithms.min_max.torch_backend import PTMinMaxAlgoBackend
 from nncf.quantization.algorithms.post_training.algorithm import PostTrainingQuantization
 from nncf.quantization.algorithms.post_training.algorithm import PostTrainingQuantizationParameters
-from nncf.quantization.algorithms.min_max.torch_backend import PTMinMaxAlgoBackend
-from tests.post_training.test_ptq_params import TemplateTestPTQParams
-from nncf.torch.tensor_statistics.collectors import PTMinMaxStatisticCollector
+from nncf.scopes import IgnoredScope
 from nncf.torch.tensor_statistics.collectors import PTMeanMinMaxStatisticCollector
-
-from tests.torch.helpers import create_bn, create_conv, create_depthwise_conv
+from nncf.torch.tensor_statistics.collectors import PTMinMaxStatisticCollector
+from tests.post_training.test_ptq_params import TemplateTestPTQParams
+from tests.torch.helpers import create_bn
+from tests.torch.helpers import create_conv
+from tests.torch.helpers import create_depthwise_conv
+from tests.torch.ptq.helpers import get_nncf_network
 from tests.torch.ptq.helpers import get_single_conv_nncf_graph
 from tests.torch.ptq.helpers import get_single_no_weigth_matmul_nncf_graph
-from tests.torch.ptq.helpers import get_nncf_network
 
 # pylint: disable=protected-access
 
@@ -68,7 +68,7 @@ class OneDepthwiseConvModel(nn.Module, ToNNCFNetworkInterface):
         return self.depthwise_conv(x)
 
 
-@pytest.mark.parametrize('target_device', TargetDevice)
+@pytest.mark.parametrize("target_device", TargetDevice)
 def test_target_device(target_device):
     algo = PostTrainingQuantization(PostTrainingQuantizationParameters(target_device=target_device))
     min_max_algo = algo.algorithms[0]
@@ -86,35 +86,26 @@ class TestPTQParams(TemplateTestPTQParams):
     def get_mean_max_statistic_collector_cls(self):
         return PTMeanMinMaxStatisticCollector
 
-    def check_quantize_outputs_fq_num(self, quantize_outputs,
-                                      act_num_q, weight_num_q):
+    def check_quantize_outputs_fq_num(self, quantize_outputs, act_num_q, weight_num_q):
         if quantize_outputs:
             assert act_num_q == 2
         else:
             assert act_num_q == 1
         assert weight_num_q == 1
 
-    @pytest.fixture(scope='session')
+    @pytest.fixture(scope="session")
     def test_params(self):
         return {
-        'test_range_type_per_tensor':
-            {'model': LinearTestModel().get_nncf_network(),
-             'stat_points_num': 5},
-        'test_range_type_per_channel':
-            {'model': OneDepthwiseConvModel().get_nncf_network(),
-             'stat_points_num': 2},
-        'test_quantize_outputs':
-            {'nncf_graph': get_single_conv_nncf_graph().nncf_graph,
-             'pattern': GraphPattern()},
-        'test_ignored_scopes':
-            {'nncf_graph': get_single_conv_nncf_graph().nncf_graph,
-             'pattern': GraphPattern()},
-        'test_model_type_pass':
-            {'nncf_graph': get_single_no_weigth_matmul_nncf_graph().nncf_graph,
-             'pattern': GraphPattern()},
+            "test_range_type_per_tensor": {"model": LinearTestModel().get_nncf_network(), "stat_points_num": 5},
+            "test_range_type_per_channel": {"model": OneDepthwiseConvModel().get_nncf_network(), "stat_points_num": 2},
+            "test_quantize_outputs": {"nncf_graph": get_single_conv_nncf_graph().nncf_graph, "pattern": GraphPattern()},
+            "test_ignored_scopes": {"nncf_graph": get_single_conv_nncf_graph().nncf_graph, "pattern": GraphPattern()},
+            "test_model_type_pass": {
+                "nncf_graph": get_single_no_weigth_matmul_nncf_graph().nncf_graph,
+                "pattern": GraphPattern(),
+            },
         }
 
-    @pytest.fixture(params=[(IgnoredScope([]), 1, 1),
-                            (IgnoredScope(['/Conv_1_0']), 0, 0)])
+    @pytest.fixture(params=[(IgnoredScope([]), 1, 1), (IgnoredScope(["/Conv_1_0"]), 0, 0)])
     def ignored_scopes_data(self, request):
         return request.param

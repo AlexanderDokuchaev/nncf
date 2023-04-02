@@ -24,7 +24,7 @@ class OperatorMetatype:
     Base class for grouping framework operators based on their semantic meaning.
     """
 
-    name = ''  # type: str
+    name = ""  # type: str
     hw_config_names = []  # type: List[str]
 
     @classmethod
@@ -37,7 +37,7 @@ class OperatorMetatype:
         return []
 
     @classmethod
-    def get_subtypes(cls) -> List[Type['OperatorMetatype']]:
+    def get_subtypes(cls) -> List[Type["OperatorMetatype"]]:
         """
         Returns a list of 'OperatorMetatype' that are subtypes.
 
@@ -46,7 +46,7 @@ class OperatorMetatype:
         return []
 
     @classmethod
-    def subtype_check(cls, metatype: Type['OperatorMetatype']) -> bool:
+    def subtype_check(cls, metatype: Type["OperatorMetatype"]) -> bool:
         """
         Check if a metatype is a subtype.
 
@@ -97,11 +97,11 @@ class OperatorMetatypeRegistry(Registry):
             super_register(obj, cls_name)
             op_names = obj.get_all_aliases()
             for name in op_names:
-                if name in self._op_name_to_op_meta_dict \
-                        and not obj.subtype_check(self._op_name_to_op_meta_dict[name]):
+                if name in self._op_name_to_op_meta_dict and not obj.subtype_check(self._op_name_to_op_meta_dict[name]):
                     raise RuntimeError(
-                        'Inconsistent operator metatype registry - single patched '
-                        'op name maps to multiple metatypes!')
+                        "Inconsistent operator metatype registry - single patched "
+                        "op name maps to multiple metatypes!"
+                    )
 
                 self._op_name_to_op_meta_dict[name] = obj
             return obj
@@ -120,9 +120,9 @@ class OperatorMetatypeRegistry(Registry):
         return self._op_name_to_op_meta_dict[op_name]
 
 
-NOOP_METATYPES = Registry('noop_metatypes')
-INPUT_NOOP_METATYPES = Registry('input_noop_metatypes')
-OUTPUT_NOOP_METATYPES = Registry('output_noop_metatypes')
+NOOP_METATYPES = Registry("noop_metatypes")
+INPUT_NOOP_METATYPES = Registry("input_noop_metatypes")
+OUTPUT_NOOP_METATYPES = Registry("output_noop_metatypes")
 
 
 class UnknownMetatype(OperatorMetatype):
@@ -131,6 +131,7 @@ class UnknownMetatype(OperatorMetatype):
     typically these are the operations that haven't been discovered before.
     Algorithms should avoid processing graph nodes with this metatype.
     """
+
     name = "unknown"
 
     @classmethod
@@ -144,6 +145,7 @@ class NoopMetatype(OperatorMetatype):
     NoopMetatype is mapped to operations in NNCFGraph, that doesn't influence an input tensor.
     The compression algorithms can safely ignore this node.
     """
+
     name = "noop"
 
     @classmethod

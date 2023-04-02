@@ -13,19 +13,21 @@
 from abc import ABC
 from abc import abstractmethod
 from itertools import islice
-from typing import Dict, TypeVar, Any
+from typing import Any
+from typing import Dict
+from typing import TypeVar
 
 from tqdm import tqdm
 
-from nncf.common.factory import ModelTransformerFactory
 from nncf.common.factory import EngineFactory
+from nncf.common.factory import ModelTransformerFactory
 from nncf.common.graph.transformations.layout import TransformationLayout
 from nncf.common.tensor import NNCFTensor
 from nncf.common.tensor_statistics.statistic_point import StatisticPointsContainer
 from nncf.data.dataset import Dataset
 
-TensorType = TypeVar('TensorType')
-TModel = TypeVar('TModel')
+TensorType = TypeVar("TensorType")
+TModel = TypeVar("TModel")
 
 
 class StatisticsAggregator(ABC):
@@ -51,8 +53,9 @@ class StatisticsAggregator(ABC):
         model_with_outputs = model_transformer.transform(transformation_layout)
         engine = EngineFactory.create(model_with_outputs)
 
-        for input_data in tqdm(islice(self.dataset.get_inference_data(), self.stat_subset_size),
-                               total=self.stat_subset_size):
+        for input_data in tqdm(
+            islice(self.dataset.get_inference_data(), self.stat_subset_size), total=self.stat_subset_size
+        ):
             outputs = engine.infer(input_data)
             processed_outputs = self._process_outputs(outputs)
             self._register_statistics(processed_outputs, self.statistic_points)
@@ -72,13 +75,10 @@ class StatisticsAggregator(ABC):
             for _statistic_point in _statistic_points:
                 for _, tensor_collectors in _statistic_point.algorithm_to_tensor_collectors.items():
                     for tensor_collector in tensor_collectors:
-                        self.stat_subset_size = max(
-                            self.stat_subset_size, tensor_collector.num_samples)
+                        self.stat_subset_size = max(self.stat_subset_size, tensor_collector.num_samples)
 
     @abstractmethod
-    def _register_statistics(self,
-                             outputs: Dict[str, NNCFTensor],
-                             statistic_points: StatisticPointsContainer) -> None:
+    def _register_statistics(self, outputs: Dict[str, NNCFTensor], statistic_points: StatisticPointsContainer) -> None:
         """
         Process prepared raw model outputs and statistic points for the further usage.
 
@@ -87,8 +87,9 @@ class StatisticsAggregator(ABC):
         """
 
     @abstractmethod
-    def _get_transformation_layout_extra_outputs(self,
-                                                 statistic_points: StatisticPointsContainer) -> TransformationLayout:
+    def _get_transformation_layout_extra_outputs(
+        self, statistic_points: StatisticPointsContainer
+    ) -> TransformationLayout:
         """
         Create backend-specific transformation layout for the further statistics collection
 

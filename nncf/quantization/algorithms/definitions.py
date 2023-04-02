@@ -15,10 +15,10 @@ from enum import Enum
 
 
 class Granularity(Enum):
-    PERTENSOR = 'pertensor'
-    PERCHANNEL = 'perchannel'
+    PERTENSOR = "pertensor"
+    PERCHANNEL = "perchannel"
 
 
 class RangeType(Enum):
-    MINMAX = 'min_max'
-    MEAN_MINMAX = 'mean_min_max'
+    MINMAX = "min_max"
+    MEAN_MINMAX = "mean_min_max"

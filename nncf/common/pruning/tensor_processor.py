@@ -12,9 +12,11 @@
 """
 
 from abc import abstractmethod
-from typing import List, Union
+from typing import List
+from typing import Union
 
-from nncf.common.tensor import NNCFTensor, DeviceType
+from nncf.common.tensor import DeviceType
+from nncf.common.tensor import NNCFTensor
 
 
 class NNCFPruningBaseTensorProcessor:

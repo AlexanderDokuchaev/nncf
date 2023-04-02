@@ -15,7 +15,6 @@ from nncf.common.graph.operator_metatypes import UnknownMetatype
 from nncf.common.quantization.quantizer_propagation.structs import QuantizationTrait
 from nncf.experimental.openvino_native.graph.metatypes import openvino_metatypes as ov_metatypes
 
-
 DEFAULT_OV_QUANT_TRAIT_TO_OP_DICT = {
     QuantizationTrait.INPUTS_QUANTIZABLE: [
         ov_metatypes.OVConvolutionMetatype,
@@ -58,8 +57,8 @@ DEFAULT_OV_QUANT_TRAIT_TO_OP_DICT = {
         ov_metatypes.OVExpMetatype,
         ov_metatypes.OVLogMetatype,
         ov_metatypes.OVAssignMetatype,
-        UnknownMetatype
+        UnknownMetatype,
     ],
     QuantizationTrait.CONCAT: [ov_metatypes.OVConcatMetatype],
-    QuantizationTrait.OUTPUT_QUANTIZATION_AS_WEIGHTS: []
+    QuantizationTrait.OUTPUT_QUANTIZATION_AS_WEIGHTS: [],
 }

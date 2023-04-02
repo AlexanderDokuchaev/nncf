@@ -11,11 +11,12 @@
  limitations under the License.
 """
 
-from abc import ABC, abstractmethod
+from abc import ABC
+from abc import abstractmethod
 from collections import Counter
 from typing import TypeVar
 
-TensorType = TypeVar('TensorType')
+TensorType = TypeVar("TensorType")
 
 
 class TensorStatistic(ABC):
@@ -36,15 +37,15 @@ class MinMaxTensorStatistic(TensorStatistic):
         self.min_values = min_values
         self.max_values = max_values
 
-    def __eq__(self, other: 'MinMaxTensorStatistic') -> bool:
-        return self.tensor_eq(self.min_values, other.min_values) and \
-               self.tensor_eq(self.max_values, other.max_values)
+    def __eq__(self, other: "MinMaxTensorStatistic") -> bool:
+        return self.tensor_eq(self.min_values, other.min_values) and self.tensor_eq(self.max_values, other.max_values)
 
 
 class MeanTensorStatistic(TensorStatistic):
     """
     Base class for the statistics that collects as mean per-axis
     """
+
     def __init__(self, mean_values, shape):
         """
         :param mean_values: Сollected mean per-axis values.
@@ -53,9 +54,8 @@ class MeanTensorStatistic(TensorStatistic):
         self.mean_values = mean_values
         self.shape = shape
 
-    def __eq__(self, other: 'MeanTensorStatistic') -> bool:
-        return self.tensor_eq(self.mean_values, other.mean_values) and \
-            self.tensor_eq(self.shape, other.shape)
+    def __eq__(self, other: "MeanTensorStatistic") -> bool:
+        return self.tensor_eq(self.mean_values, other.mean_values) and self.tensor_eq(self.shape, other.shape)
 
 
 class MedianMADTensorStatistic(TensorStatistic):
@@ -63,33 +63,35 @@ class MedianMADTensorStatistic(TensorStatistic):
         self.median_values = median_values
         self.mad_values = mad_values
 
-    def __eq__(self, other: 'MedianMADTensorStatistic') -> bool:
-        return self.tensor_eq(self.median_values, other.median_values) and \
-               self.tensor_eq(self.mad_values, other.mad_values)
+    def __eq__(self, other: "MedianMADTensorStatistic") -> bool:
+        return self.tensor_eq(self.median_values, other.median_values) and self.tensor_eq(
+            self.mad_values, other.mad_values
+        )
 
 
 class PercentileTensorStatistic(TensorStatistic):
     def __init__(self, percentile_vs_values_dict):
         self.percentile_vs_values_dict = percentile_vs_values_dict
 
-    def __eq__(self, other: 'PercentileTensorStatistic', rtol=1e-9) -> bool:
+    def __eq__(self, other: "PercentileTensorStatistic", rtol=1e-9) -> bool:
         if Counter(self.percentile_vs_values_dict.keys()) != Counter(other.percentile_vs_values_dict.keys()):
             return False
         for pct in self.percentile_vs_values_dict.keys():
-            if not self.tensor_eq(self.percentile_vs_values_dict[pct],
-                                        other.percentile_vs_values_dict[pct]):
+            if not self.tensor_eq(self.percentile_vs_values_dict[pct], other.percentile_vs_values_dict[pct]):
                 return False
         return True
+
 
 class BatchTensorStatistic(TensorStatistic):
     """
     Base class for the statistics that collects as mean per-batch
     """
+
     def __init__(self, values):
         """
         :param values: Сollected per-batch values.
         """
         self.values = values
 
-    def __eq__(self, other: 'BatchTensorStatistic') -> bool:
+    def __eq__(self, other: "BatchTensorStatistic") -> bool:
         return self.tensor_eq(self.values, other.values)

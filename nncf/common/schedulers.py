@@ -11,8 +11,11 @@
  limitations under the License.
 """
 
-from typing import List, Optional, Dict, Any
 from bisect import bisect_right
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
 
 import numpy as np
 
@@ -26,8 +29,7 @@ class PolynomialDecaySchedule:
     For more details about polynomial decay see the [paper](https://arxiv.org/abs/1710.01878).
     """
 
-    def __init__(self, initial_value: float, target_value: float, target_epoch: int,
-                 power: float, concave: bool):
+    def __init__(self, initial_value: float, target_value: float, target_epoch: int, power: float, concave: bool):
         """
          Initializes a schedule with a polynomial decay function.
 
@@ -91,7 +93,7 @@ class MultiStepSchedule:
             equal to the number of elements in the `boundaries` list plus one.
         """
         if len(boundaries) + 1 != len(values):
-            raise ValueError('The length of `values` should be 1 more than the length of `boundaries`')
+            raise ValueError("The length of `values` should be 1 more than the length of `boundaries`")
 
         self.boundaries = boundaries
         self.values = values
@@ -234,8 +236,8 @@ class BaseCompressionScheduler(CompressionScheduler):
 
         :param state: Output of `get_state()` method.
         """
-        self._current_step = state['current_step']
-        self._current_epoch = state['current_epoch']
+        self._current_step = state["current_step"]
+        self._current_epoch = state["current_epoch"]
 
     def get_state(self) -> Dict[str, Any]:
         """
@@ -243,14 +245,10 @@ class BaseCompressionScheduler(CompressionScheduler):
 
         :return: The compression scheduler state.
         """
-        return {
-            'current_step': self._current_step,
-            'current_epoch': self._current_epoch
-        }
+        return {"current_step": self._current_step, "current_epoch": self._current_epoch}
 
 
 class StubCompressionScheduler(CompressionScheduler):
-
     def step(self, next_step: Optional[int] = None) -> None:
         pass
 
