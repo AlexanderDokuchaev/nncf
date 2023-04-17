@@ -38,10 +38,9 @@ class TFInitializingDataLoader(NNCFDataLoader):
         return iter(self._data_loader)
 
 
-def register_default_init_args(nncf_config: NNCFConfig,
-                               data_loader: tf.data.Dataset,
-                               batch_size: int,
-                               device: str = None) -> NNCFConfig:
+def register_default_init_args(
+    nncf_config: NNCFConfig, data_loader: tf.data.Dataset, batch_size: int, device: str = None
+) -> NNCFConfig:
     """
     Register extra structures in the NNCFConfig. Initialization of some
     compression algorithms requires certain extra structures.
@@ -53,10 +52,10 @@ def register_default_init_args(nncf_config: NNCFConfig,
         of the model parameters will be used.
     :return: An instance of the NNCFConfig class with extra structures.
     """
-    nncf_config.register_extra_structs([
-        QuantizationRangeInitArgs(data_loader=TFInitializingDataLoader(data_loader, batch_size),
-                                  device=device),
-        BNAdaptationInitArgs(data_loader=TFInitializingDataLoader(data_loader, batch_size),
-                             device=device)
-    ])
+    nncf_config.register_extra_structs(
+        [
+            QuantizationRangeInitArgs(data_loader=TFInitializingDataLoader(data_loader, batch_size), device=device),
+            BNAdaptationInitArgs(data_loader=TFInitializingDataLoader(data_loader, batch_size), device=device),
+        ]
+    )
     return nncf_config

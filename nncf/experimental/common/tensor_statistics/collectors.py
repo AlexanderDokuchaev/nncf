@@ -13,16 +13,16 @@
 
 from abc import ABC
 from abc import abstractmethod
-from collections import deque
 from collections import defaultdict
-from typing import TypeVar, Tuple, Optional, List, Set, Dict, Any, Union
+from collections import deque
+from typing import Any, Dict, List, Optional, Set, Tuple, TypeVar, Union
 
-from nncf.common.tensor_statistics.collectors import NNCFCollectorTensorProcessor
-from nncf.common.tensor_statistics.statistics import TensorStatistic
-from nncf.common.tensor_statistics.collectors import ReductionShape
 from nncf.common.tensor import TensorType
+from nncf.common.tensor_statistics.collectors import NNCFCollectorTensorProcessor
+from nncf.common.tensor_statistics.collectors import ReductionShape
+from nncf.common.tensor_statistics.statistics import TensorStatistic
 
-InplaceInsertionFNType = TypeVar('InplaceInsertionFNType')
+InplaceInsertionFNType = TypeVar("InplaceInsertionFNType")
 
 
 class TensorReducerBase(ABC):
@@ -31,9 +31,7 @@ class TensorReducerBase(ABC):
     the specified rule. Could handle tensors inplace or out of place.
     """
 
-    def __init__(self,
-                 reduction_shape: Optional[ReductionShape] = None,
-                 inplace: bool = False):
+    def __init__(self, reduction_shape: Optional[ReductionShape] = None, inplace: bool = False):
         """
         :param reduction_shape: Reduction shape for reduction calculation. Equal to list(range(len(input.shape)))
             if empty.
@@ -70,8 +68,7 @@ class TensorReducerBase(ABC):
         """
 
     @abstractmethod
-    def get_output_name(self, target_node_name: str,
-                        port_id: int) -> str:
+    def get_output_name(self, target_node_name: str, port_id: int) -> str:
         """
         Returns target output name from target model that is
             modified for statistic collection.
@@ -98,9 +95,11 @@ class TensorReducerBase(ABC):
         return self._reduce_out_of_place(x)
 
     def __eq__(self, __o: object) -> bool:
-        return isinstance(__o, self.__class__) and\
-            self._reduction_shape == __o._reduction_shape and\
-            self._inplace == __o.inplace
+        return (
+            isinstance(__o, self.__class__)
+            and self._reduction_shape == __o._reduction_shape
+            and self._inplace == __o.inplace
+        )
 
     def __hash__(self) -> int:
         return hash((self.name(), self._inplace))
@@ -112,8 +111,7 @@ class TensorAggregatorBase:
     aggregate them in terms of NNCFCollectorTensorProcessor operations.
     """
 
-    def __init__(self, tensor_processor: NNCFCollectorTensorProcessor,
-                 num_samples: Optional[int]):
+    def __init__(self, tensor_processor: NNCFCollectorTensorProcessor, num_samples: Optional[int]):
         """
         :param tensor_processor: Backend-specific tensor processor.
         :param num_samples: Maximum number of samples to collect. Aggregator
@@ -135,8 +133,7 @@ class TensorAggregatorBase:
         return cls.__name__
 
     def register_reduced_input(self, x: TensorType):
-        if self._num_samples is not None and \
-            self._collected_samples >= self._num_samples:
+        if self._num_samples is not None and self._collected_samples >= self._num_samples:
             return
         self._register_reduced_input_impl(x)
         self._collected_samples += 1
@@ -162,8 +159,7 @@ class TensorAggregatorBase:
         self._container = []
 
     def __eq__(self, __o: object) -> bool:
-        return isinstance(__o, self.__class__) and \
-            self._num_samples == __o.num_samples
+        return isinstance(__o, self.__class__) and self._num_samples == __o.num_samples
 
     def __hash__(self) -> int:
         return hash((self.name()))
@@ -179,9 +175,7 @@ class TensorCollector:
     a dict could be collected by `get_statistics` call.
     """
 
-    def __init__(self,
-                 statistic_container: Optional[TensorStatistic] = None
-                 ) -> None:
+    def __init__(self, statistic_container: Optional[TensorStatistic] = None) -> None:
         self._reducers: Set[TensorReducerBase] = set()
         self._aggregators: Dict[Tuple[int, int], TensorAggregatorBase] = {}
         self._stat_container_kwargs_map: Dict[str, Tuple[int, int]] = {}
@@ -210,8 +204,9 @@ class TensorCollector:
     def disable(self):
         self._enabled = False
 
-    def register_statistic_branch(self, container_key: str,
-                                  reducer: TensorReducerBase, aggregator: TensorAggregatorBase) -> None:
+    def register_statistic_branch(
+        self, container_key: str, reducer: TensorReducerBase, aggregator: TensorAggregatorBase
+    ) -> None:
         """
         Registers statistic collection branch for a container key. Correspondent input will be reduced
         by given reducer and reduced value will be registered and aggregated by given aggregator.
@@ -223,11 +218,11 @@ class TensorCollector:
         :param aggregator: TensorAggergator instance for the statistic collection branch.
         """
         if container_key in self._stat_container_kwargs_map:
-            raise RuntimeError(f'Two differend statistic branches for one'
-                               f' container key {container_key} are encountered')
+            raise RuntimeError(
+                f"Two differend statistic branches for one" f" container key {container_key} are encountered"
+            )
         if any(aggr is aggregator for aggr in self._aggregators.values()):
-            raise RuntimeError(f'One aggregator instance {aggregator} '
-                               f' for different branches is encountered')
+            raise RuntimeError(f"One aggregator instance {aggregator} " f" for different branches is encountered")
 
         self._reducers.add(reducer)
         key = (hash(reducer), hash(aggregator))
@@ -265,12 +260,18 @@ class TensorCollector:
             input_ = inputs[reducer_hash]
             reduced_inputs[reducer_hash] = reducer(input_)
 
-        for (reducer_hash, _), aggregator, in self._aggregators.items():
+        for (
+            (reducer_hash, _),
+            aggregator,
+        ) in self._aggregators.items():
             aggregator.register_reduced_input(reduced_inputs[reducer_hash])
 
     def _aggregate(self) -> None:
         result = {}
-        for key, aggregator, in self._aggregators.items():
+        for (
+            key,
+            aggregator,
+        ) in self._aggregators.items():
             val = aggregator.aggregate()
             result[key] = val
         return result
@@ -345,8 +346,7 @@ class MergedTensorCollector(TensorCollector):
         :param tensor_collectors: Tensor collectors to merge.
         """
         super().__init__()
-        aggregators: Dict[Tuple[int, int], List[Tuple[TensorCollector, TensorAggregatorBase]]] =\
-            defaultdict(list)
+        aggregators: Dict[Tuple[int, int], List[Tuple[TensorCollector, TensorAggregatorBase]]] = defaultdict(list)
         for tensor_collector in tensor_collectors:
             if not tensor_collector.enabled:
                 continue
@@ -393,6 +393,7 @@ class AbsMaxReducer(TensorReducerBase):
     def _reduce_out_of_place(self, x: TensorType) -> TensorType:
         x = self._tensor_processor.abs(x)
         return self._tensor_processor.reduce_max(x, self._reduction_shape)
+
 
 class BatchMeanReducer(TensorReducerBase):
     def _reduce_out_of_place(self, x: TensorType) -> TensorType:
@@ -452,8 +453,7 @@ class ShapeAggregator(TensorAggregatorBase):
 
 
 class OfflineMinMaxAggregatorBase(TensorAggregatorBase):
-    def __init__(self, tensor_processor, use_per_sample_stats: bool,
-                 num_samples: Optional[int], window_size=None):
+    def __init__(self, tensor_processor, use_per_sample_stats: bool, num_samples: Optional[int], window_size=None):
         super().__init__(tensor_processor, num_samples)
         self._window_size = window_size
         self._container = deque(maxlen=window_size)

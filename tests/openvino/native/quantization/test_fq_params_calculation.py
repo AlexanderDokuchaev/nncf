@@ -11,44 +11,44 @@
  limitations under the License.
 """
 
-import pytest
 from pathlib import Path
+
 import numpy as np
 import openvino.runtime as ov
+import pytest
 
 from nncf.common.quantization.structs import QuantizationPreset
 from nncf.experimental.openvino_native.statistics.aggregator import OVStatisticsAggregator
 from nncf.quantization.algorithms.min_max.algorithm import MinMaxQuantization
 from nncf.quantization.algorithms.min_max.algorithm import MinMaxQuantizationParameters
-
 from tests.openvino.conftest import OPENVINO_NATIVE_TEST_ROOT
-from tests.openvino.omz_helpers import convert_model
-from tests.openvino.omz_helpers import download_model
 from tests.openvino.native.common import get_dataset_for_test
 from tests.openvino.native.common import load_json
 from tests.openvino.native.models import SYNTHETIC_MODELS
-from tests.openvino.native.models import LinearModel
 from tests.openvino.native.models import ConvModel
-from tests.openvino.native.models import MatMul2DModel
 from tests.openvino.native.models import FPModel
+from tests.openvino.native.models import LinearModel
+from tests.openvino.native.models import MatMul2DModel
+from tests.openvino.omz_helpers import convert_model
+from tests.openvino.omz_helpers import download_model
 
-REFERENCE_SCALES_DIR = OPENVINO_NATIVE_TEST_ROOT / 'data' / 'reference_scales'
+REFERENCE_SCALES_DIR = OPENVINO_NATIVE_TEST_ROOT / "data" / "reference_scales"
 
 
 def get_fq_nodes_stats_algo(model):
     nodes = {}
     for op in model.get_ops():
-        if op.get_type_name() == 'FakeQuantize':
+        if op.get_type_name() == "FakeQuantize":
             input_low = op.input_value(1).get_node().get_data()
             input_high = op.input_value(2).get_node().get_data()
             output_low = op.input_value(3).get_node().get_data()
             output_high = op.input_value(4).get_node().get_data()
 
             nodes[op.get_friendly_name()] = {
-                    'input_low': input_low,
-                    'input_high': input_high,
-                    'output_low': output_low,
-                    'output_high': output_high
+                "input_low": input_low,
+                "input_high": input_high,
+                "output_low": output_low,
+                "output_high": output_high,
             }
     return nodes
 
@@ -57,12 +57,12 @@ def compare_stats(expected, actual):
     assert len(expected) == len(actual)
     for ref_name in expected:
         ref_stats = expected[ref_name]
-        ref_input_low, ref_input_high = ref_stats['input_low'], ref_stats['input_high']
-        ref_output_low, ref_output_high = ref_stats['output_low'], ref_stats['output_high']
+        ref_input_low, ref_input_high = ref_stats["input_low"], ref_stats["input_high"]
+        ref_output_low, ref_output_high = ref_stats["output_low"], ref_stats["output_high"]
 
         stats = actual[ref_name]
-        input_low, input_high = stats['input_low'], stats['input_high']
-        output_low, output_high = stats['output_low'], stats['output_high']
+        input_low, input_high = stats["input_low"], stats["input_high"]
+        output_low, output_high = stats["output_low"], stats["output_high"]
 
         assert np.allclose(ref_input_low, input_low, atol=1e-6)
         assert np.allclose(ref_input_high, input_high, atol=1e-6)
@@ -83,21 +83,23 @@ def quantize_model(ov_model, q_params):
     return quantized_model
 
 
-@pytest.fixture(params=[True, False], ids=['inplace', 'out_of_place'],
-                name='inplace_statistics')
+@pytest.fixture(params=[True, False], ids=["inplace", "out_of_place"], name="inplace_statistics")
 def fixture_inplace_statistics(request):
     return request.param
 
 
-@pytest.mark.parametrize('preset', [QuantizationPreset.PERFORMANCE, QuantizationPreset.MIXED],
-                         ids=[QuantizationPreset.PERFORMANCE.value, QuantizationPreset.MIXED.value])
-@pytest.mark.parametrize('model_creator_func', SYNTHETIC_MODELS.values())
+@pytest.mark.parametrize(
+    "preset",
+    [QuantizationPreset.PERFORMANCE, QuantizationPreset.MIXED],
+    ids=[QuantizationPreset.PERFORMANCE.value, QuantizationPreset.MIXED.value],
+)
+@pytest.mark.parametrize("model_creator_func", SYNTHETIC_MODELS.values())
 def test_syntetic_models_fq_scales(model_creator_func, preset, inplace_statistics):
     model = model_creator_func()
-    quantized_model = quantize_model(model.ov_model, {'preset': preset, 'inplace_statistics': inplace_statistics})
+    quantized_model = quantize_model(model.ov_model, {"preset": preset, "inplace_statistics": inplace_statistics})
     nodes = get_fq_nodes_stats_algo(quantized_model)
 
-    ref_stats_name = model.ref_graph_name.split(".")[0] + f'_{preset.value}.json'
+    ref_stats_name = model.ref_graph_name.split(".")[0] + f"_{preset.value}.json"
     ref_stats_path = REFERENCE_SCALES_DIR / ref_stats_name
 
     # Unkomment lines below to generate reference for new models.
@@ -109,25 +111,27 @@ def test_syntetic_models_fq_scales(model_creator_func, preset, inplace_statistic
 
 
 OMZ_MODELS = [
-    'mobilenet-v2-pytorch',
-    'resnet-18-pytorch',
-    'yolo-v4-tiny-tf',
+    "mobilenet-v2-pytorch",
+    "resnet-18-pytorch",
+    "yolo-v4-tiny-tf",
 ]
 
 
-@pytest.mark.parametrize('preset', [QuantizationPreset.PERFORMANCE, QuantizationPreset.MIXED],
-                         ids=[QuantizationPreset.PERFORMANCE.value, QuantizationPreset.MIXED.value])
-@pytest.mark.parametrize('model_name', OMZ_MODELS)
+@pytest.mark.parametrize(
+    "preset",
+    [QuantizationPreset.PERFORMANCE, QuantizationPreset.MIXED],
+    ids=[QuantizationPreset.PERFORMANCE.value, QuantizationPreset.MIXED.value],
+)
+@pytest.mark.parametrize("model_name", OMZ_MODELS)
 def test_omz_models_fq_scales(model_name, preset, inplace_statistics, tmp_path):
     download_model(model_name, tmp_path)
     convert_model(model_name, tmp_path)
-    model_path = tmp_path / 'public' / model_name / 'FP32' / f'{model_name}.xml'
+    model_path = tmp_path / "public" / model_name / "FP32" / f"{model_name}.xml"
     model = ov.Core().read_model(model_path)
-    quantized_model = quantize_model(model, {'preset': preset,
-                                             'inplace_statistics': inplace_statistics})
+    quantized_model = quantize_model(model, {"preset": preset, "inplace_statistics": inplace_statistics})
     nodes = get_fq_nodes_stats_algo(quantized_model)
 
-    ref_stats_name = str(Path(model_path).name).rsplit('.', maxsplit=1)[0] + f'_{preset.value}.json'
+    ref_stats_name = str(Path(model_path).name).rsplit(".", maxsplit=1)[0] + f"_{preset.value}.json"
     ref_stats_path = REFERENCE_SCALES_DIR / ref_stats_name
     ref_nodes = load_json(ref_stats_path)
 
@@ -135,39 +139,43 @@ def test_omz_models_fq_scales(model_name, preset, inplace_statistics, tmp_path):
 
 
 REF_NODES_SHAPES = {
-    'LinearModel': {'Input/fq_output_0': (), 'MatMul/fq_weights_1': (1, 1, 1, 1)},
-    'ConvModel': {'Conv/fq_weights_1': (3, 1, 1, 1), 'Sub/fq_output_0': ()},
-    'MatMul2DModel': {'Input/fq_output_0': (), 'MatMul/fq_weights_1': (5, 1)},
+    "LinearModel": {"Input/fq_output_0": (), "MatMul/fq_weights_1": (1, 1, 1, 1)},
+    "ConvModel": {"Conv/fq_weights_1": (3, 1, 1, 1), "Sub/fq_output_0": ()},
+    "MatMul2DModel": {"Input/fq_output_0": (), "MatMul/fq_weights_1": (5, 1)},
 }
 
-@pytest.mark.parametrize('model_creator_func, ref_shapes',
-                         zip([LinearModel, ConvModel, MatMul2DModel], REF_NODES_SHAPES.values()))
+
+@pytest.mark.parametrize(
+    "model_creator_func, ref_shapes", zip([LinearModel, ConvModel, MatMul2DModel], REF_NODES_SHAPES.values())
+)
 def test_syntetic_models_fq_shapes(model_creator_func, ref_shapes, inplace_statistics):
     model = model_creator_func()
-    quantized_model = quantize_model(model.ov_model, {'preset': QuantizationPreset.PERFORMANCE,
-                                                      'inplace_statistics': inplace_statistics})
+    quantized_model = quantize_model(
+        model.ov_model, {"preset": QuantizationPreset.PERFORMANCE, "inplace_statistics": inplace_statistics}
+    )
     nodes = get_fq_nodes_stats_algo(quantized_model)
     for node_name, node in nodes.items():
-        assert node['input_low'].shape == ref_shapes[node_name]
-        assert node['input_high'].shape == ref_shapes[node_name]
-        assert node['output_low'].shape == ref_shapes[node_name]
-        assert node['output_high'].shape == ref_shapes[node_name]
+        assert node["input_low"].shape == ref_shapes[node_name]
+        assert node["input_high"].shape == ref_shapes[node_name]
+        assert node["output_low"].shape == ref_shapes[node_name]
+        assert node["output_high"].shape == ref_shapes[node_name]
 
 
-@pytest.mark.parametrize('const_dtype', ['FP16', 'FP32'])
-@pytest.mark.parametrize('input_dtype', ['FP16', 'FP32'])
+@pytest.mark.parametrize("const_dtype", ["FP16", "FP32"])
+@pytest.mark.parametrize("input_dtype", ["FP16", "FP32"])
 def test_fq_precision_orig_fp32model(const_dtype, input_dtype, inplace_statistics):
     model = FPModel(const_dtype, input_dtype)
-    quantized_model = quantize_model(model.ov_model, {'preset': QuantizationPreset.PERFORMANCE,
-                                                      'inplace_statistics': inplace_statistics})
+    quantized_model = quantize_model(
+        model.ov_model, {"preset": QuantizationPreset.PERFORMANCE, "inplace_statistics": inplace_statistics}
+    )
     for op in quantized_model.get_ops():
-        if op.get_type_name() == 'FakeQuantize':
+        if op.get_type_name() == "FakeQuantize":
             inp_node = op.input(0)
             fq_input_node = inp_node.get_source_output().get_node()
-            if fq_input_node.get_element_type() == 'Constant':
-                assert op.get_element_type() == ov.Type(np.float32 if input_dtype == 'FP32' else np.float16)
-        elif op.get_type_name() == 'Convert':
+            if fq_input_node.get_element_type() == "Constant":
+                assert op.get_element_type() == ov.Type(np.float32 if input_dtype == "FP32" else np.float16)
+        elif op.get_type_name() == "Convert":
             inp_node = op.input(0)
             fq_input_node = inp_node.get_source_output().get_node()
-            if fq_input_node.get_element_type() == 'Constant':
-                assert op.get_element_type() == ov.Type(np.float32 if const_dtype == 'FP32' else np.float16)
+            if fq_input_node.get_element_type() == "Constant":
+                assert op.get_element_type() == ov.Type(np.float32 if const_dtype == "FP32" else np.float16)

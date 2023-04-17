@@ -20,6 +20,7 @@ from nncf.version import BKC_TORCH_VERSION
 
 import torch
 from pkg_resources import parse_version
+
 torch_version = parse_version(torch.__version__).base_version
 if parse_version(BKC_TORCH_VERSION).base_version != torch_version:
     warn_bkc_version_mismatch("torch", BKC_TORCH_VERSION, torch.__version__)

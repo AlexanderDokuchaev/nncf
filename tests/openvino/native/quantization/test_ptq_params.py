@@ -13,26 +13,25 @@
 
 import pytest
 
-from nncf.scopes import IgnoredScope
-from nncf.common.utils.backend import BackendType
-from nncf.common.graph.patterns.manager import PatternsManager
 from nncf.common.graph.patterns import GraphPattern
-from nncf.parameters import TargetDevice
+from nncf.common.graph.patterns.manager import PatternsManager
 from nncf.common.hardware.config import HW_CONFIG_TYPE_TARGET_DEVICE_MAP
-from nncf.quantization.algorithms.post_training.algorithm import PostTrainingQuantization
-from nncf.quantization.algorithms.post_training.algorithm import PostTrainingQuantizationParameters
+from nncf.common.utils.backend import BackendType
+from nncf.experimental.common.tensor_statistics.collectors import OfflineMeanAggregator
+from nncf.experimental.common.tensor_statistics.collectors import OnlineMaxAggregator
+from nncf.experimental.common.tensor_statistics.collectors import OnlineMinAggregator
+from nncf.experimental.common.tensor_statistics.collectors import TensorCollector
+from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVMatMulMetatype
 from nncf.experimental.openvino_native.graph.nncf_graph_builder import GraphConverter
 from nncf.experimental.openvino_native.quantization.algorithms.min_max.openvino_backend import OVMinMaxAlgoBackend
-from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVMatMulMetatype
-from nncf.experimental.common.tensor_statistics.collectors import TensorCollector
-from nncf.experimental.common.tensor_statistics.collectors import OnlineMinAggregator
-from nncf.experimental.common.tensor_statistics.collectors import OnlineMaxAggregator
-from nncf.experimental.common.tensor_statistics.collectors import OfflineMeanAggregator
-
-from tests.openvino.native.models import LinearModel
+from nncf.parameters import TargetDevice
+from nncf.quantization.algorithms.post_training.algorithm import PostTrainingQuantization
+from nncf.quantization.algorithms.post_training.algorithm import PostTrainingQuantizationParameters
+from nncf.scopes import IgnoredScope
 from tests.openvino.native.models import DepthwiseConv4DModel
-from tests.post_training.test_ptq_params import TemplateTestPTQParams
+from tests.openvino.native.models import LinearModel
 from tests.post_training.models import NNCFGraphToTestMatMul
+from tests.post_training.test_ptq_params import TemplateTestPTQParams
 
 
 def get_patterns_setup() -> GraphPattern:
@@ -42,7 +41,7 @@ def get_patterns_setup() -> GraphPattern:
 
 
 # pylint: disable=protected-access
-@pytest.mark.parametrize('target_device', [TargetDevice.CPU, TargetDevice.GPU, TargetDevice.VPU])
+@pytest.mark.parametrize("target_device", [TargetDevice.CPU, TargetDevice.GPU, TargetDevice.VPU])
 def test_target_device(target_device):
     algo = PostTrainingQuantization(PostTrainingQuantizationParameters(target_device=target_device))
     min_max_algo = algo.algorithms[0]
@@ -66,36 +65,39 @@ class TestPTQParams(TemplateTestPTQParams):
         assert OfflineMeanAggregator in aggrs
         assert aggrs[0].__class__ == aggrs[1].__class__
 
-    def check_quantize_outputs_fq_num(self, quantize_outputs,
-                                      act_num_q, weight_num_q):
+    def check_quantize_outputs_fq_num(self, quantize_outputs, act_num_q, weight_num_q):
         if quantize_outputs:
             assert act_num_q == 3
         else:
             assert act_num_q == 1
         assert weight_num_q == 1
 
-    @pytest.fixture(scope='session')
+    @pytest.fixture(scope="session")
     def test_params(self):
         return {
-        'test_range_type_per_tensor':
-            {'model': LinearModel().ov_model,
-             'stat_points_num': 2},
-        'test_range_type_per_channel':
-            {'model': DepthwiseConv4DModel().ov_model,
-             'stat_points_num': 2},
-        'test_quantize_outputs':
-            {'nncf_graph': GraphConverter.create_nncf_graph(LinearModel().ov_model),
-             'pattern': get_patterns_setup()},
-        'test_ignored_scopes':
-            {'nncf_graph': GraphConverter.create_nncf_graph(LinearModel().ov_model),
-             'pattern': get_patterns_setup()},
-        'test_model_type_pass':
-            {'nncf_graph': NNCFGraphToTestMatMul(OVMatMulMetatype).nncf_graph,
-             'pattern': GraphPattern()},
+            "test_range_type_per_tensor": {"model": LinearModel().ov_model, "stat_points_num": 2},
+            "test_range_type_per_channel": {"model": DepthwiseConv4DModel().ov_model, "stat_points_num": 2},
+            "test_quantize_outputs": {
+                "nncf_graph": GraphConverter.create_nncf_graph(LinearModel().ov_model),
+                "pattern": get_patterns_setup(),
+            },
+            "test_ignored_scopes": {
+                "nncf_graph": GraphConverter.create_nncf_graph(LinearModel().ov_model),
+                "pattern": get_patterns_setup(),
+            },
+            "test_model_type_pass": {
+                "nncf_graph": NNCFGraphToTestMatMul(OVMatMulMetatype).nncf_graph,
+                "pattern": GraphPattern(),
+            },
         }
 
-    @pytest.fixture(params=[(IgnoredScope(), 1, 1), (IgnoredScope(['MatMul']), 1, 0),
-                            (IgnoredScope(['Add']), 1, 1),
-                            (IgnoredScope(['MatMul', 'Add']), 0, 0)])
+    @pytest.fixture(
+        params=[
+            (IgnoredScope(), 1, 1),
+            (IgnoredScope(["MatMul"]), 1, 0),
+            (IgnoredScope(["Add"]), 1, 1),
+            (IgnoredScope(["MatMul", "Add"]), 0, 0),
+        ]
+    )
     def ignored_scopes_data(self, request):
         return request.param
