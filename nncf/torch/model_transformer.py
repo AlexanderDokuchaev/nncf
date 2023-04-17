@@ -11,10 +11,7 @@
  limitations under the License.
 """
 import copy
-from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Tuple
+from typing import Callable, Dict, List, Tuple
 
 from torch import nn
 

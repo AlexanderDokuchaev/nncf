@@ -51,6 +51,7 @@ def test_strip(enable_quantization):
 
     TFTensorListComparator.check_equal(x_nncf, x_tf)
 
+
 @pytest.mark.parametrize("do_copy", (True, False))
 @pytest.mark.parametrize("enable_quantization", (True, False), ids=("with_quantization", "no_quantization"))
 def test_do_copy(do_copy, enable_quantization):

@@ -11,10 +11,7 @@
  limitations under the License.
 """
 
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import TypeVar
+from typing import Dict, List, Optional, TypeVar
 
 from nncf import Dataset
 from nncf.common.logging import nncf_logger
@@ -38,7 +35,7 @@ from nncf.quantization.algorithms.min_max.algorithm import MinMaxQuantization
 from nncf.quantization.algorithms.min_max.algorithm import MinMaxQuantizationParameters
 from nncf.scopes import IgnoredScope
 
-TModel = TypeVar('TModel')
+TModel = TypeVar("TModel")
 
 
 class PostTrainingQuantizationParameters(AlgorithmParameters):
@@ -46,23 +43,24 @@ class PostTrainingQuantizationParameters(AlgorithmParameters):
     This class handles parameters for PostTrainingQuantization algorithm.
     """
 
-    def __init__(self,
-                 number_samples: int = 300,
-                 preset: QuantizationPreset = QuantizationPreset.PERFORMANCE,
-                 weight_bits: Optional[int] = None,
-                 weight_granularity: Optional[Granularity] = None,
-                 signed_weights: Optional[bool] = None,
-                 activation_bits: Optional[int] = None,
-                 activation_granularity: Optional[Granularity] = None,
-                 signed_activations: Optional[bool] = None,
-                 target_device: TargetDevice = TargetDevice.ANY,
-                 range_type: RangeType = RangeType.MEAN_MINMAX,
-                 quantize_outputs: bool = False,
-                 ignored_scopes: Optional[IgnoredScope] = None,
-                 model_type: Optional[ModelType] = None,
-                 fast_bias_correction: bool = True,
-                 inplace_statistics: bool = True,
-                 ):
+    def __init__(
+        self,
+        number_samples: int = 300,
+        preset: QuantizationPreset = QuantizationPreset.PERFORMANCE,
+        weight_bits: Optional[int] = None,
+        weight_granularity: Optional[Granularity] = None,
+        signed_weights: Optional[bool] = None,
+        activation_bits: Optional[int] = None,
+        activation_granularity: Optional[Granularity] = None,
+        signed_activations: Optional[bool] = None,
+        target_device: TargetDevice = TargetDevice.ANY,
+        range_type: RangeType = RangeType.MEAN_MINMAX,
+        quantize_outputs: bool = False,
+        ignored_scopes: Optional[IgnoredScope] = None,
+        model_type: Optional[ModelType] = None,
+        fast_bias_correction: bool = True,
+        inplace_statistics: bool = True,
+    ):
         """
         :param number_samples: Number of samples for the statistics collection.
         :param preset: Preset parameter for Quantization.
@@ -92,33 +90,37 @@ class PostTrainingQuantizationParameters(AlgorithmParameters):
             Defines whether to calculate quantization statistics by backend graph operations or by default Python
             implementation. Statistics computated inplace tend to be calculated faster and with lower memory stamp.
         """
-        self.algorithms = {MinMaxQuantization: MinMaxQuantizationParameters(
-            preset=preset,
-            weight_bits=weight_bits,
-            weight_granularity=weight_granularity,
-            signed_weights=signed_weights,
-            activation_bits=activation_bits,
-            activation_granularity=activation_granularity,
-            signed_activations=signed_activations,
-            range_type=range_type,
-            number_samples=number_samples,
-            target_device=target_device,
-            quantize_outputs=quantize_outputs,
-            ignored_scopes=ignored_scopes,
-            model_type=model_type,
-            inplace_statistics=inplace_statistics
-        )}
+        self.algorithms = {
+            MinMaxQuantization: MinMaxQuantizationParameters(
+                preset=preset,
+                weight_bits=weight_bits,
+                weight_granularity=weight_granularity,
+                signed_weights=signed_weights,
+                activation_bits=activation_bits,
+                activation_granularity=activation_granularity,
+                signed_activations=signed_activations,
+                range_type=range_type,
+                number_samples=number_samples,
+                target_device=target_device,
+                quantize_outputs=quantize_outputs,
+                ignored_scopes=ignored_scopes,
+                model_type=model_type,
+                inplace_statistics=inplace_statistics,
+            )
+        }
 
-        bias_correction_algo = {BiasCorrection: BiasCorrectionParameters(
-            number_samples=number_samples,
-            inplace_statistics=inplace_statistics
-        )}
+        bias_correction_algo = {
+            BiasCorrection: BiasCorrectionParameters(
+                number_samples=number_samples, inplace_statistics=inplace_statistics
+            )
+        }
 
         if fast_bias_correction:
-            bias_correction_algo = {FastBiasCorrection: FastBiasCorrectionParameters(
-                number_samples=number_samples,
-                inplace_statistics=inplace_statistics
-            )}
+            bias_correction_algo = {
+                FastBiasCorrection: FastBiasCorrectionParameters(
+                    number_samples=number_samples, inplace_statistics=inplace_statistics
+                )
+            }
         self.algorithms.update(bias_correction_algo)
 
 
@@ -134,8 +136,9 @@ class PostTrainingQuantization(Algorithm):
 
     """
 
-    def __init__(self,
-                 quantization_parameters: PostTrainingQuantizationParameters = PostTrainingQuantizationParameters()):
+    def __init__(
+        self, quantization_parameters: PostTrainingQuantizationParameters = PostTrainingQuantizationParameters()
+    ):
         super().__init__()
         self.algorithms = self._get_sub_algorithms(quantization_parameters.algorithms)
 
@@ -173,9 +176,7 @@ class PostTrainingQuantization(Algorithm):
                     output.add_statistic_point(statistic_point)
         return output
 
-    def _create_statistics_aggregator(self,
-                                      dataset: Dataset,
-                                      backend: BackendType) -> StatisticsAggregator:
+    def _create_statistics_aggregator(self, dataset: Dataset, backend: BackendType) -> StatisticsAggregator:
         """
         Creates backend-specific StatisticsAggregator.
 
@@ -188,25 +189,30 @@ class PostTrainingQuantization(Algorithm):
         """
         if backend == BackendType.ONNX:
             from nncf.onnx.statistics.aggregator import ONNXStatisticsAggregator
+
             return ONNXStatisticsAggregator(dataset)
         if backend == BackendType.OPENVINO:
             from nncf.experimental.openvino_native.statistics.aggregator import OVStatisticsAggregator
+
             return OVStatisticsAggregator(dataset)
         if backend == BackendType.TORCH:
             from nncf.torch.statistics.aggregator import PTStatisticsAggregator
+
             return PTStatisticsAggregator(dataset)
         return None
 
-    def _apply(self,
-               model: TModel,
-               statistic_points: Optional[StatisticPointsContainer] = None,
-               dataset: Optional[Dataset] = None) -> TModel:
+    def _apply(
+        self,
+        model: TModel,
+        statistic_points: Optional[StatisticPointsContainer] = None,
+        dataset: Optional[Dataset] = None,
+    ) -> TModel:
         modified_model = copy_model(model)
         if statistic_points is None:
             backend = get_backend(modified_model)
             # TODO (l-bat): Remove after OpenVINO Native is removed from experimental
             if backend == BackendType.OPENVINO:
-                nncf_logger.warning('You are using experimental OpenVINO backend for the Post-training quantization.')
+                nncf_logger.warning("You are using experimental OpenVINO backend for the Post-training quantization.")
 
             statistics_aggregator = self._create_statistics_aggregator(dataset, backend)
             for algorithm in self.algorithms:

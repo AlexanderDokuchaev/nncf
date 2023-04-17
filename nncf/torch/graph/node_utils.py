@@ -11,9 +11,10 @@
  limitations under the License.
 """
 from torch import Tensor
+
 from nncf.common.graph.graph import NNCFNode
-from nncf.torch.nncf_network import NNCFNetwork
 from nncf.torch.graph.operator_metatypes import OPERATORS_WITH_BIAS_METATYPES
+from nncf.torch.nncf_network import NNCFNetwork
 
 
 def is_node_with_bias(node: NNCFNode, model: NNCFNetwork) -> bool:

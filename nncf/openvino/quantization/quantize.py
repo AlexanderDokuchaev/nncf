@@ -25,16 +25,17 @@ from nncf.common.quantization.structs import QuantizationPreset
 from nncf.data import Dataset
 from nncf.openvino.engine import OVEngine
 from nncf.openvino.quantization.accuracy_aware import NMSEBasedAccuracyAware
-from nncf.scopes import IgnoredScope
 from nncf.parameters import ModelType
 from nncf.parameters import TargetDevice
 from nncf.quantization.telemetry_extractors import CompressionStartedWithQuantizeApi
+from nncf.scopes import IgnoredScope
 from nncf.telemetry import tracked_function
 from nncf.telemetry.events import NNCF_OV_CATEGORY
 
 
-def _convert_openvino_model_to_compressed_model(model: ov.Model,
-                                                target_device: str) -> pot.graph.nx_model.CompressedModel:
+def _convert_openvino_model_to_compressed_model(
+    model: ov.Model, target_device: str
+) -> pot.graph.nx_model.CompressedModel:
     """
     Serializes the provided OpenVINO model and loads the model in the POT representation.
 
@@ -43,13 +44,13 @@ def _convert_openvino_model_to_compressed_model(model: ov.Model,
     :return: The POT representation of the provided model.
     """
     with tempfile.TemporaryDirectory(dir=tempfile.gettempdir()) as tmp_dir:
-        xml_path = str(Path(tmp_dir) / 'model.xml')
-        bin_path = str(Path(tmp_dir) / 'model.bin')
+        xml_path = str(Path(tmp_dir) / "model.xml")
+        bin_path = str(Path(tmp_dir) / "model.bin")
         ov.serialize(model, xml_path, bin_path)
         model_config = {
-            'model_name': 'model',
-            'model': xml_path,
-            'weights': bin_path,
+            "model_name": "model",
+            "model": xml_path,
+            "weights": bin_path,
         }
         pot_model = pot.load_model(model_config, target_device)
 
@@ -64,9 +65,9 @@ def _convert_compressed_model_to_openvino_model(model: pot.graph.nx_model.Compre
     :return: The `openvino.runtime.Model`  object which represents the provided model.
     """
     with tempfile.TemporaryDirectory(dir=tempfile.gettempdir()) as tmp_dir:
-        paths = pot.save_model(model, save_path=tmp_dir, model_name='model')
-        xml_path = paths[0]['model']
-        bin_path = paths[0]['weights']
+        paths = pot.save_model(model, save_path=tmp_dir, model_name="model")
+        xml_path = paths[0]["model"]
+        bin_path = paths[0]["weights"]
         ie = ov.Core()
         ov_model = ie.read_model(xml_path, bin_path)
     return ov_model
@@ -84,53 +85,55 @@ def _create_ignored_scope_config(ignored_scope: Optional[IgnoredScope]) -> Dict:
 
     ignored = {}
     if ignored_scope.names is not None:
-        ignored['scope'] = ignored_scope.names
+        ignored["scope"] = ignored_scope.names
     if ignored_scope.patterns:
-        raise RuntimeError('Quantization algorithm from the OpenVINO backend '
-                           'does not support regular expressions in the ignored '
-                           'scopes yet')
+        raise RuntimeError(
+            "Quantization algorithm from the OpenVINO backend "
+            "does not support regular expressions in the ignored "
+            "scopes yet"
+        )
     if ignored_scope.types is not None:
-        ignored['operations'] = [{'type': type} for type in ignored_scope.types]
+        ignored["operations"] = [{"type": type} for type in ignored_scope.types]
     return ignored
 
 
 @tracked_function(NNCF_OV_CATEGORY, [CompressionStartedWithQuantizeApi(), "target_device", "preset"])
-def quantize_impl(model: ov.Model,
-                  calibration_dataset: Dataset,
-                  preset: QuantizationPreset,
-                  target_device: TargetDevice,
-                  subset_size: int,
-                  fast_bias_correction: bool,
-                  model_type: Optional[ModelType] = None,
-                  ignored_scope: Optional[IgnoredScope] = None,
-                  compress_weights: bool = True) -> ov.Model:
+def quantize_impl(
+    model: ov.Model,
+    calibration_dataset: Dataset,
+    preset: QuantizationPreset,
+    target_device: TargetDevice,
+    subset_size: int,
+    fast_bias_correction: bool,
+    model_type: Optional[ModelType] = None,
+    ignored_scope: Optional[IgnoredScope] = None,
+    compress_weights: bool = True,
+) -> ov.Model:
     """
     Implementation of the `quantize()` method for the OpenVINO backend.
     """
-    pot.utils.logger.init_logger(
-        level=logging.getLevelName(nncf_logger.getEffectiveLevel())
-    )
+    pot.utils.logger.init_logger(level=logging.getLevelName(nncf_logger.getEffectiveLevel()))
 
     algorithms = [
         {
-            'name': 'DefaultQuantization',
-            'params': {
-                'target_device': target_device.value,
-                'preset': preset.value,
-                'stat_subset_size': subset_size,
-                'use_fast_bias': fast_bias_correction,
-                'model_type': None if model_type is None else model_type.value,
-                'ignored': _create_ignored_scope_config(ignored_scope)
-            }
+            "name": "DefaultQuantization",
+            "params": {
+                "target_device": target_device.value,
+                "preset": preset.value,
+                "stat_subset_size": subset_size,
+                "use_fast_bias": fast_bias_correction,
+                "model_type": None if model_type is None else model_type.value,
+                "ignored": _create_ignored_scope_config(ignored_scope),
+            },
         }
     ]
 
     pot_model = _convert_openvino_model_to_compressed_model(model, target_device)
 
     engine_config = {
-        'device': 'CPU',
-        'stat_requests_number': 2,
-        'eval_requests_number': 2,
+        "device": "CPU",
+        "stat_requests_number": 2,
+        "eval_requests_number": 2,
     }
 
     engine = OVEngine(engine_config, calibration_dataset, calibration_dataset)
@@ -142,29 +145,29 @@ def quantize_impl(model: ov.Model,
     return quantized_model
 
 
-def quantize_with_accuracy_control_impl(model: ov.Model,
-                                        calibration_dataset: Dataset,
-                                        validation_dataset: Dataset,
-                                        validation_fn: Callable[[ov.CompiledModel, Iterable[Any]], float],
-                                        max_drop: float = 0.01,
-                                        preset: QuantizationPreset = QuantizationPreset.PERFORMANCE,
-                                        target_device: TargetDevice = TargetDevice.ANY,
-                                        subset_size: int = 300,
-                                        fast_bias_correction: bool = True,
-                                        model_type: Optional[ModelType] = None,
-                                        ignored_scope: Optional[IgnoredScope] = None) -> ov.Model:
+def quantize_with_accuracy_control_impl(
+    model: ov.Model,
+    calibration_dataset: Dataset,
+    validation_dataset: Dataset,
+    validation_fn: Callable[[ov.CompiledModel, Iterable[Any]], float],
+    max_drop: float = 0.01,
+    preset: QuantizationPreset = QuantizationPreset.PERFORMANCE,
+    target_device: TargetDevice = TargetDevice.ANY,
+    subset_size: int = 300,
+    fast_bias_correction: bool = True,
+    model_type: Optional[ModelType] = None,
+    ignored_scope: Optional[IgnoredScope] = None,
+) -> ov.Model:
     """
     Implementation of the `quantize_with_accuracy_control()` method for the OpenVINO backend.
     """
-    pot.utils.logger.init_logger(
-        level=logging.getLevelName(nncf_logger.getEffectiveLevel())
-    )
+    pot.utils.logger.init_logger(level=logging.getLevelName(nncf_logger.getEffectiveLevel()))
     pot_model = _convert_openvino_model_to_compressed_model(model, target_device)
 
     engine_config = {
-        'device': 'CPU',
-        'stat_requests_number': 1,
-        'eval_requests_number': 1,
+        "device": "CPU",
+        "stat_requests_number": 1,
+        "eval_requests_number": 1,
     }
 
     # Check whether it is possible to calculate the metric for one data item.
@@ -172,27 +175,27 @@ def quantize_with_accuracy_control_impl(model: ov.Model,
     use_original_metric = True
     try:
         ie = ov.Core()
-        compiled_model = ie.compile_model(model, device_name='CPU')
+        compiled_model = ie.compile_model(model, device_name="CPU")
         _ = validation_fn(compiled_model, validation_dataset.get_data(indices=[0]))
     except Exception:
         use_original_metric = False
     compression_algorithms = pot.algorithms.algorithm_selector.COMPRESSION_ALGORITHMS
-    if 'NMSEBasedAccuracyAware' not in compression_algorithms.registry_dict:
-        compression_algorithms.register('NMSEBasedAccuracyAware')(NMSEBasedAccuracyAware)
+    if "NMSEBasedAccuracyAware" not in compression_algorithms.registry_dict:
+        compression_algorithms.register("NMSEBasedAccuracyAware")(NMSEBasedAccuracyAware)
 
     algorithms = [
         {
-            'name': 'NMSEBasedAccuracyAware',
-            'params': {
-                'target_device': target_device.value,
-                'stat_subset_size': subset_size,
-                'maximal_drop': max_drop,
-                'metric_subset_ratio': 0.5,
-                'preset': preset.value,
-                'use_fast_bias': fast_bias_correction,
-                'model_type': None if model_type is None else model_type.value,
-                'ignored': _create_ignored_scope_config(ignored_scope),
-            }
+            "name": "NMSEBasedAccuracyAware",
+            "params": {
+                "target_device": target_device.value,
+                "stat_subset_size": subset_size,
+                "maximal_drop": max_drop,
+                "metric_subset_ratio": 0.5,
+                "preset": preset.value,
+                "use_fast_bias": fast_bias_correction,
+                "model_type": None if model_type is None else model_type.value,
+                "ignored": _create_ignored_scope_config(ignored_scope),
+            },
         }
     ]
 

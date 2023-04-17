@@ -11,53 +11,52 @@
  limitations under the License.
 """
 
-import numpy as np
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Optional, Tuple
 
-from nncf.parameters import ModelType
-from nncf.parameters import TargetDevice
-from nncf.scopes import IgnoredScope
+import numpy as np
+
 from nncf.common.graph.graph import NNCFGraph
 from nncf.common.graph.graph import NNCFNode
 from nncf.common.graph.operator_metatypes import OperatorMetatype
 from nncf.common.graph.transformations.commands import TargetType
 from nncf.common.hardware.config import HWConfig
-from nncf.common.quantization.structs import QuantizerConfig
 from nncf.common.quantization.structs import QuantizationMode
+from nncf.common.quantization.structs import QuantizerConfig
 from nncf.common.tensor_statistics.collectors import ReductionShape
 from nncf.common.utils.backend import BackendType
-
 from nncf.experimental.common.tensor_statistics.collectors import TensorCollector
-from nncf.experimental.openvino_native.graph.nncf_graph_builder import OVConstantLayerAttributes
 from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import GENERAL_WEIGHT_LAYER_METATYPES
-from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVTopKMetatype
-from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVNonMaxSuppressionMetatype
-from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVShapeOfMetatype
-from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVReadValueMetatype
-from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVMatMulMetatype
 from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVAddMetatype
+from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVMatMulMetatype
+from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVMultiplyMetatype
+from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVMVNMetatype
+from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVNonMaxSuppressionMetatype
 from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVPowerMetatype
+from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVReadValueMetatype
+from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVReduceMeanMetatype
+from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVShapeOfMetatype
+from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVSquaredDifferenceMetatype
 from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVSqueezeMetatype
 from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVSubtractMetatype
-from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVReduceMeanMetatype
-from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVSquaredDifferenceMetatype
-from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVMVNMetatype
-from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVMultiplyMetatype
+from nncf.experimental.openvino_native.graph.metatypes.openvino_metatypes import OVTopKMetatype
+from nncf.experimental.openvino_native.graph.nncf_graph_builder import OVConstantLayerAttributes
 from nncf.experimental.openvino_native.graph.transformations.commands import OVQuantizerInsertionCommand
 from nncf.experimental.openvino_native.graph.transformations.commands import OVTargetPoint
 from nncf.experimental.openvino_native.hardware.config import OVHWConfig
 from nncf.experimental.openvino_native.quantization.default_quantization import DEFAULT_OV_QUANT_TRAIT_TO_OP_DICT
-from nncf.experimental.openvino_native.statistics.collectors import get_min_max_stat_collector
 from nncf.experimental.openvino_native.statistics.collectors import get_mean_min_max_stat_collector
+from nncf.experimental.openvino_native.statistics.collectors import get_min_max_stat_collector
 from nncf.experimental.openvino_native.statistics.statistics import OVMinMaxTensorStatistic
-from nncf.quantization.algorithms.min_max.backend import MinMaxAlgoBackend
+from nncf.parameters import ModelType
+from nncf.parameters import TargetDevice
 from nncf.quantization.algorithms.min_max.backend import ALGO_BACKENDS
+from nncf.quantization.algorithms.min_max.backend import MinMaxAlgoBackend
 from nncf.quantization.fake_quantize import FakeQuantizeParameters
+from nncf.scopes import IgnoredScope
 
 
 @ALGO_BACKENDS.register(BackendType.OPENVINO)
 class OVMinMaxAlgoBackend(MinMaxAlgoBackend):
-
     @property
     def mat_mul_metatype(self) -> OperatorMetatype:
         return OVMatMulMetatype
@@ -83,25 +82,25 @@ class OVMinMaxAlgoBackend(MinMaxAlgoBackend):
         return DEFAULT_OV_QUANT_TRAIT_TO_OP_DICT
 
     @staticmethod
-    def target_point(target_type: TargetType,
-                     target_node_name: str,
-                     port_id: int) -> OVTargetPoint:
+    def target_point(target_type: TargetType, target_node_name: str, port_id: int) -> OVTargetPoint:
         return OVTargetPoint(target_type, target_node_name, port_id)
 
     @staticmethod
     def create_activation_quantizer_insertion_command(
-            nncf_graph: NNCFGraph,
-            target_point: OVTargetPoint,
-            quantizer_config: QuantizerConfig,
-            parameters: FakeQuantizeParameters) -> OVQuantizerInsertionCommand:
+        nncf_graph: NNCFGraph,
+        target_point: OVTargetPoint,
+        quantizer_config: QuantizerConfig,
+        parameters: FakeQuantizeParameters,
+    ) -> OVQuantizerInsertionCommand:
         return OVQuantizerInsertionCommand(target_point, parameters)
 
     @staticmethod
     def create_weight_quantizer_insertion_command(
-            nncf_graph: NNCFGraph,
-            target_point: OVTargetPoint,
-            quantizer_config: QuantizerConfig,
-            parameters: FakeQuantizeParameters) -> OVQuantizerInsertionCommand:
+        nncf_graph: NNCFGraph,
+        target_point: OVTargetPoint,
+        quantizer_config: QuantizerConfig,
+        parameters: FakeQuantizeParameters,
+    ) -> OVQuantizerInsertionCommand:
         return OVQuantizerInsertionCommand(target_point, parameters)
 
     @staticmethod
@@ -116,9 +115,8 @@ class OVMinMaxAlgoBackend(MinMaxAlgoBackend):
 
     @staticmethod
     def _get_reduction_shape_and_use_abs_max(
-            nncf_graph: NNCFGraph,
-            target_point: OVTargetPoint,
-            quantizer_config: QuantizerConfig) -> Tuple[ReductionShape, bool]:
+        nncf_graph: NNCFGraph, target_point: OVTargetPoint, quantizer_config: QuantizerConfig
+    ) -> Tuple[ReductionShape, bool]:
         use_abs_max = quantizer_config.mode == QuantizationMode.SYMMETRIC
         if not quantizer_config.per_channel:
             return None, use_abs_max
@@ -130,7 +128,7 @@ class OVMinMaxAlgoBackend(MinMaxAlgoBackend):
             elif target_point.type == TargetType.POST_LAYER_OPERATION:
                 shape = nncf_graph.get_output_edges(node)[target_point.port_id].tensor_shape
             else:
-                raise NotImplementedError(f'Unsupported target point type {target_point.type}.')
+                raise NotImplementedError(f"Unsupported target point type {target_point.type}.")
 
             # TODO (l-bat): Disable quantizer propogation through layout changing operations
             channel_axis = 1  # OpenVINO activations have channel first layout: [N, C, Z, Y, X]
@@ -138,7 +136,7 @@ class OVMinMaxAlgoBackend(MinMaxAlgoBackend):
             return axes, use_abs_max
 
         assert isinstance(node.layer_attributes, OVConstantLayerAttributes)
-        const_shape = node.layer_attributes.const_attrs[target_point.port_id]['shape']
+        const_shape = node.layer_attributes.const_attrs[target_point.port_id]["shape"]
 
         if quantizer_config.per_channel:
             assert node.metatype in GENERAL_WEIGHT_LAYER_METATYPES
@@ -156,32 +154,35 @@ class OVMinMaxAlgoBackend(MinMaxAlgoBackend):
         return num_samples
 
     @staticmethod
-    def minmax_statistic_collector(nncf_graph: NNCFGraph,
-                                   target_point: OVTargetPoint,
-                                   quantizer_config: QuantizerConfig,
-                                   inplace: bool,
-                                   num_samples: int = None,
-                                   ) -> TensorCollector:
-        reduction_shape, use_abs_max =\
-            OVMinMaxAlgoBackend._get_reduction_shape_and_use_abs_max(nncf_graph, target_point,
-                                                                     quantizer_config)
+    def minmax_statistic_collector(
+        nncf_graph: NNCFGraph,
+        target_point: OVTargetPoint,
+        quantizer_config: QuantizerConfig,
+        inplace: bool,
+        num_samples: int = None,
+    ) -> TensorCollector:
+        reduction_shape, use_abs_max = OVMinMaxAlgoBackend._get_reduction_shape_and_use_abs_max(
+            nncf_graph, target_point, quantizer_config
+        )
         _num_samples = OVMinMaxAlgoBackend._get_num_samples(num_samples, target_point)
         return get_min_max_stat_collector(_num_samples, reduction_shape, use_abs_max, inplace)
 
     @staticmethod
-    def mean_minmax_statistic_collector(nncf_graph: NNCFGraph,
-                                        target_point: OVTargetPoint,
-                                        quantizer_config: QuantizerConfig,
-                                        use_per_sample_stats: bool,
-                                        inplace: bool,
-                                        num_samples: int = None,
-                                        ) -> TensorCollector:
-        reduction_shape, use_abs_max = \
-            OVMinMaxAlgoBackend._get_reduction_shape_and_use_abs_max(nncf_graph, target_point,
-                                                                     quantizer_config)
+    def mean_minmax_statistic_collector(
+        nncf_graph: NNCFGraph,
+        target_point: OVTargetPoint,
+        quantizer_config: QuantizerConfig,
+        use_per_sample_stats: bool,
+        inplace: bool,
+        num_samples: int = None,
+    ) -> TensorCollector:
+        reduction_shape, use_abs_max = OVMinMaxAlgoBackend._get_reduction_shape_and_use_abs_max(
+            nncf_graph, target_point, quantizer_config
+        )
         _num_samples = OVMinMaxAlgoBackend._get_num_samples(num_samples, target_point)
-        return get_mean_min_max_stat_collector(_num_samples, reduction_shape,
-                                               use_abs_max, use_per_sample_stats, inplace)
+        return get_mean_min_max_stat_collector(
+            _num_samples, reduction_shape, use_abs_max, use_per_sample_stats, inplace
+        )
 
     @staticmethod
     def get_weight_tensor_port_ids(node: NNCFNode) -> List[Optional[int]]:
@@ -191,9 +192,15 @@ class OVMinMaxAlgoBackend(MinMaxAlgoBackend):
     def get_model_type_ignore_scope(model_type: ModelType, device: TargetDevice) -> IgnoredScope:
         if model_type == ModelType.TRANSFORMER:
             types = []
-            metatypes_to_add = [OVAddMetatype, OVPowerMetatype, OVSqueezeMetatype,
-                                OVSubtractMetatype, OVReduceMeanMetatype,
-                                OVSquaredDifferenceMetatype, OVMVNMetatype]
+            metatypes_to_add = [
+                OVAddMetatype,
+                OVPowerMetatype,
+                OVSqueezeMetatype,
+                OVSubtractMetatype,
+                OVReduceMeanMetatype,
+                OVSquaredDifferenceMetatype,
+                OVMVNMetatype,
+            ]
             if device != TargetDevice.CPU_SPR:
                 metatypes_to_add.append(OVMultiplyMetatype)
             for metatype in metatypes_to_add:
@@ -203,11 +210,14 @@ class OVMinMaxAlgoBackend(MinMaxAlgoBackend):
 
     @staticmethod
     def get_weight_nodes(nncf_graph: NNCFGraph) -> List[NNCFNode]:
-        return [node for node in nncf_graph.get_all_nodes() if
-                isinstance(node.layer_attributes, OVConstantLayerAttributes) and
-                node.metatype in GENERAL_WEIGHT_LAYER_METATYPES]
+        return [
+            node
+            for node in nncf_graph.get_all_nodes()
+            if isinstance(node.layer_attributes, OVConstantLayerAttributes)
+            and node.metatype in GENERAL_WEIGHT_LAYER_METATYPES
+        ]
 
     @staticmethod
     def get_weight_name(nncf_graph: NNCFGraph, target_point: OVTargetPoint) -> str:
         node = nncf_graph.get_node_by_name(target_point.target_node_name)
-        return node.layer_attributes.const_attrs[target_point.port_id]['name']
+        return node.layer_attributes.const_attrs[target_point.port_id]["name"]

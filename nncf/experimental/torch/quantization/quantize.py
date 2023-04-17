@@ -43,7 +43,7 @@ def quantize_impl(
 
     dataset_iter = iter(calibration_dataset.get_inference_data())
     input_shape = tuple(next(dataset_iter).shape)
-    nncf_config = NNCFConfig({'input_info': {'sample_size': input_shape}})
+    nncf_config = NNCFConfig({"input_info": {"sample_size": input_shape}})
     model.eval()
     nncf_network = create_nncf_network(model, nncf_config)
     params = PostTrainingQuantizationParameters(
@@ -55,7 +55,7 @@ def quantize_impl(
         fast_bias_correction=fast_bias_correction,
     )
 
-    nncf_logger.warning('BiasCorrection algorithm is not supported by Torch backend by now.')
+    nncf_logger.warning("BiasCorrection algorithm is not supported by Torch backend by now.")
     params.algorithms.pop(BiasCorrection, None)
 
     quantization_algorithm = PostTrainingQuantization(params)

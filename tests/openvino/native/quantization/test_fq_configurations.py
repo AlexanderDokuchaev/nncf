@@ -11,20 +11,21 @@
  limitations under the License.
 """
 
-import pytest
-import numpy as np
 from dataclasses import dataclass
+
+import numpy as np
+import pytest
 
 from nncf.common.quantization.structs import QuantizationMode
 from nncf.common.quantization.structs import QuantizerConfig
 from nncf.common.quantization.structs import QuantizerGroup
+from nncf.experimental.openvino_native.statistics.statistics import OVMinMaxTensorStatistic
 from nncf.quantization.fake_quantize import FakeQuantizeParameters
 from nncf.quantization.fake_quantize import calculate_quantizer_parameters
-from nncf.experimental.openvino_native.statistics.statistics import OVMinMaxTensorStatistic
 from tests.openvino.conftest import OPENVINO_NATIVE_TEST_ROOT
 from tests.openvino.native.common import load_json
 
-FQ_CALCULATED_PARAMETERS_PATH = OPENVINO_NATIVE_TEST_ROOT / 'data' / 'reference_scales' / 'fq_params_synthetic.json'
+FQ_CALCULATED_PARAMETERS_PATH = OPENVINO_NATIVE_TEST_ROOT / "data" / "reference_scales" / "fq_params_synthetic.json"
 
 
 @dataclass
@@ -34,25 +35,14 @@ class CaseFQParams:
     per_channel: bool
 
 
-CASES_FOR_TEST = (CaseFQParams(mode=QuantizationMode.SYMMETRIC,
-                               signedness_to_force=False,
-                               per_channel=False),
-                  CaseFQParams(mode=QuantizationMode.SYMMETRIC,
-                               signedness_to_force=False,
-                               per_channel=True),
-                  CaseFQParams(mode=QuantizationMode.ASYMMETRIC,
-                               signedness_to_force=False,
-                               per_channel=False),
-                  CaseFQParams(mode=QuantizationMode.ASYMMETRIC,
-                               signedness_to_force=False,
-                               per_channel=True),
-                  CaseFQParams(mode=QuantizationMode.SYMMETRIC,
-                               signedness_to_force=True,
-                               per_channel=False),
-                  CaseFQParams(mode=QuantizationMode.SYMMETRIC,
-                               signedness_to_force=True,
-                               per_channel=True),
-                  )
+CASES_FOR_TEST = (
+    CaseFQParams(mode=QuantizationMode.SYMMETRIC, signedness_to_force=False, per_channel=False),
+    CaseFQParams(mode=QuantizationMode.SYMMETRIC, signedness_to_force=False, per_channel=True),
+    CaseFQParams(mode=QuantizationMode.ASYMMETRIC, signedness_to_force=False, per_channel=False),
+    CaseFQParams(mode=QuantizationMode.ASYMMETRIC, signedness_to_force=False, per_channel=True),
+    CaseFQParams(mode=QuantizationMode.SYMMETRIC, signedness_to_force=True, per_channel=False),
+    CaseFQParams(mode=QuantizationMode.SYMMETRIC, signedness_to_force=True, per_channel=True),
+)
 
 
 def compare_fq_parameters(ref_params, params):
@@ -69,20 +59,20 @@ def compare_fq_parameters(ref_params, params):
 
 def parse_test_data(stat_type, mode, sign, per_ch):
     fq_params = load_json(FQ_CALCULATED_PARAMETERS_PATH)
-    input_data = np.array(fq_params['data']).astype(np.float32)
-    key = f'{stat_type}_{mode}_sign_{sign}_per_ch_{per_ch}'
-    inp_l = np.array(fq_params[key]['input_low']).astype(np.float32)
-    inp_h = np.array(fq_params[key]['input_high']).astype(np.float32)
-    out_l = np.array(fq_params[key]['output_low']).astype(np.float32)
-    out_h = np.array(fq_params[key]['output_high']).astype(np.float32)
-    levels = fq_params[key]['levels']
+    input_data = np.array(fq_params["data"]).astype(np.float32)
+    key = f"{stat_type}_{mode}_sign_{sign}_per_ch_{per_ch}"
+    inp_l = np.array(fq_params[key]["input_low"]).astype(np.float32)
+    inp_h = np.array(fq_params[key]["input_high"]).astype(np.float32)
+    out_l = np.array(fq_params[key]["output_low"]).astype(np.float32)
+    out_h = np.array(fq_params[key]["output_high"]).astype(np.float32)
+    levels = fq_params[key]["levels"]
     ref_quantize_params = FakeQuantizeParameters(inp_l, inp_h, out_l, out_h, levels)
     return input_data, ref_quantize_params
 
 
-@pytest.mark.parametrize('case_to_test', CASES_FOR_TEST)
+@pytest.mark.parametrize("case_to_test", CASES_FOR_TEST)
 def test_calculate_activation_quantizer_parameters(case_to_test):
-    stat_type = 'activation'
+    stat_type = "activation"
     mode = case_to_test.mode
     sign = case_to_test.signedness_to_force
     per_ch = case_to_test.per_channel
@@ -102,9 +92,9 @@ def test_calculate_activation_quantizer_parameters(case_to_test):
     compare_fq_parameters(ref_quantize_params, quantize_params)
 
 
-@pytest.mark.parametrize('case_to_test', CASES_FOR_TEST[:4])
+@pytest.mark.parametrize("case_to_test", CASES_FOR_TEST[:4])
 def test_calculate_weight_quantizer_parameters(case_to_test):
-    stat_type = 'weights'
+    stat_type = "weights"
     mode = case_to_test.mode
     sign = case_to_test.signedness_to_force
     per_ch = case_to_test.per_channel

@@ -38,7 +38,7 @@ class TemplateTestFBCAlgorithm:
         bias_value = self.list_to_backend_type(data=bias_value)
         bias_shift = self.list_to_backend_type(data=bias_shift)
 
-        algo = FastBiasCorrection(FastBiasCorrectionParameters(number_samples=1,inplace_statistics=False))
+        algo = FastBiasCorrection(FastBiasCorrectionParameters(number_samples=1, inplace_statistics=False))
         # pylint: disable=protected-access
         algo._backend_entity = self.get_backend()
         new_bias_shift = algo.reshape_bias_shift(bias_shift, bias_value, channel_axis)
