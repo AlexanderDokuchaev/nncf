@@ -1,0 +1,71 @@
+ERROR:nncf:Neither PyTorch, TensorFlow, ONNX or OpenVINO Python packages have been found in your Python environment.
+Please install one of the supported frameworks above in order to use NNCF on top of it.
+See the installation guide at https://github.com/openvinotoolkit/nncf#installation for help.
+         264110 function calls (258104 primitive calls) in 0.130 seconds
+
+   Ordered by: standard name
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+     1000    0.001    0.000    0.004    0.000 <__array_function__ internals>:177(around)
+     1000    0.001    0.000    0.006    0.000 <__array_function__ internals>:177(round_)
+     3000    0.001    0.000    0.012    0.000 <__array_function__ internals>:177(where)
+     2000    0.002    0.000    0.002    0.000 _ufunc_config.py:132(geterr)
+     2000    0.003    0.000    0.006    0.000 _ufunc_config.py:33(seterr)
+     1000    0.000    0.000    0.000    0.000 _ufunc_config.py:426(__init__)
+     1000    0.001    0.000    0.004    0.000 _ufunc_config.py:430(__enter__)
+     1000    0.001    0.000    0.004    0.000 _ufunc_config.py:435(__exit__)
+     1000    0.014    0.000    0.129    0.000 ad_tensor.py:16(tune_range)
+        1    0.000    0.000    0.000    0.000 cProfile.py:133(__exit__)
+     2000    0.000    0.000    0.000    0.000 fromnumeric.py:3241(_around_dispatcher)
+     1000    0.001    0.000    0.003    0.000 fromnumeric.py:3245(around)
+     1000    0.001    0.000    0.005    0.000 fromnumeric.py:3754(round_)
+     1000    0.001    0.000    0.002    0.000 fromnumeric.py:51(_wrapfunc)
+     1000    0.001    0.000    0.004    0.000 functions.py:102(abs)
+     5000    0.002    0.000    0.040    0.000 functions.py:28(wrapper)
+     3000    0.004    0.000    0.024    0.000 functions.py:295(where)
+     1000    0.001    0.000    0.009    0.000 functions.py:327(round)
+        6    0.000    0.000    0.000    0.000 functools.py:657(_c3_merge)
+       15    0.000    0.000    0.000    0.000 functools.py:665(<listcomp>)
+      6/3    0.000    0.000    0.000    0.000 functools.py:684(_c3_mro)
+        6    0.000    0.000    0.000    0.000 functools.py:720(<listcomp>)
+        6    0.000    0.000    0.000    0.000 functools.py:721(<listcomp>)
+      6/3    0.000    0.000    0.000    0.000 functools.py:722(<listcomp>)
+        3    0.000    0.000    0.000    0.000 functools.py:729(_compose_mro)
+       11    0.000    0.000    0.000    0.000 functools.py:738(is_related)
+        3    0.000    0.000    0.000    0.000 functools.py:741(<listcomp>)
+        3    0.000    0.000    0.000    0.000 functools.py:749(<listcomp>)
+        3    0.000    0.000    0.000    0.000 functools.py:770(_find_impl)
+    10000    0.003    0.000    0.006    0.000 functools.py:814(dispatch)
+10000/5000    0.006    0.000    0.046    0.000 functools.py:870(wrapper)
+     3000    0.000    0.000    0.000    0.000 multiarray.py:345(where)
+     3000    0.002    0.000    0.014    0.000 numpy_functions.py:151(_)
+     1000    0.001    0.000    0.007    0.000 numpy_functions.py:166(_)
+     1000    0.001    0.000    0.001    0.000 numpy_functions.py:61(_)
+     1000    0.003    0.000    0.004    0.000 tensor.py:100(__lt__)
+     2000    0.004    0.000    0.006    0.000 tensor.py:112(__gt__)
+    27000    0.008    0.000    0.012    0.000 tensor.py:174(unwrap_tensor_data)
+    29000    0.007    0.000    0.010    0.000 tensor.py:26(__init__)
+    46000    0.005    0.000    0.005    0.000 tensor.py:29(data)
+     2000    0.003    0.000    0.005    0.000 tensor.py:62(__add__)
+     5000    0.010    0.000    0.014    0.000 tensor.py:68(__sub__)
+     1000    0.002    0.000    0.003    0.000 tensor.py:71(__rsub__)
+     7000    0.010    0.000    0.017    0.000 tensor.py:74(__mul__)
+     2000    0.004    0.000    0.006    0.000 tensor.py:83(__truediv__)
+     1000    0.003    0.000    0.004    0.000 tensor.py:86(__rtruediv__)
+     1000    0.001    0.000    0.002    0.000 tensor.py:95(__neg__)
+    10000    0.003    0.000    0.003    0.000 weakref.py:382(__getitem__)
+        6    0.000    0.000    0.000    0.000 weakref.py:395(__setitem__)
+     1000    0.000    0.000    0.000    0.000 {built-in method builtins.getattr}
+       11    0.000    0.000    0.000    0.000 {built-in method builtins.hasattr}
+    61000    0.005    0.000    0.005    0.000 {built-in method builtins.isinstance}
+        8    0.000    0.000    0.000    0.000 {built-in method builtins.issubclass}
+5000/4000    0.011    0.000    0.015    0.000 {built-in method numpy.core._multiarray_umath.implement_array_function}
+     4000    0.001    0.000    0.001    0.000 {built-in method numpy.geterrobj}
+     2000    0.001    0.000    0.001    0.000 {built-in method numpy.seterrobj}
+        9    0.000    0.000    0.000    0.000 {method 'append' of 'list' objects}
+        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+        3    0.000    0.000    0.000    0.000 {method 'get' of 'dict' objects}
+        3    0.000    0.000    0.000    0.000 {method 'keys' of 'dict' objects}
+     1000    0.002    0.000    0.002    0.000 {method 'round' of 'numpy.ndarray' objects}
+
+

@@ -1,0 +1,66 @@
+ERROR:nncf:Neither PyTorch, TensorFlow, ONNX or OpenVINO Python packages have been found in your Python environment.
+Please install one of the supported frameworks above in order to use NNCF on top of it.
+See the installation guide at https://github.com/openvinotoolkit/nncf#installation for help.
+         119386036 function calls (114385016 primitive calls) in 31.626 seconds
+
+   Ordered by: standard name
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+     1000    0.001    0.000    0.008    0.000 <__array_function__ internals>:177(around)
+     1000    0.001    0.000    0.011    0.000 <__array_function__ internals>:177(round_)
+     3000    0.002    0.000   11.825    0.004 <__array_function__ internals>:177(where)
+     2000    0.004    0.000    0.004    0.000 _ufunc_config.py:132(geterr)
+     2000    0.004    0.000    0.011    0.000 _ufunc_config.py:33(seterr)
+     1000    0.001    0.000    0.001    0.000 _ufunc_config.py:426(__init__)
+     1000    0.001    0.000    0.007    0.000 _ufunc_config.py:430(__enter__)
+     1000    0.001    0.000    0.006    0.000 _ufunc_config.py:435(__exit__)
+     17/7    0.000    0.000    0.000    0.000 abc.py:100(__subclasscheck__)
+ 18050000    2.293    0.000    4.476    0.000 abc.py:96(__instancecheck__)
+        1    0.000    0.000    0.000    0.000 cProfile.py:133(__exit__)
+     2000    0.000    0.000    0.000    0.000 fromnumeric.py:3241(_around_dispatcher)
+     1000    0.001    0.000    0.006    0.000 fromnumeric.py:3245(around)
+     1000    0.001    0.000    0.009    0.000 fromnumeric.py:3754(round_)
+     1000    0.001    0.000    0.005    0.000 fromnumeric.py:51(_wrapfunc)
+     3000    0.000    0.000    0.000    0.000 multiarray.py:345(where)
+  2000000    1.409    0.000    5.155    0.000 tensor.py:102(__rmul__)
+     2000    0.004    0.000    0.010    0.000 tensor.py:105(__truediv__)
+     1000    0.007    0.000    0.009    0.000 tensor.py:108(__rtruediv__)
+  4004000    0.498    0.000    1.107    0.000 tensor.py:111(__len__)
+  1020000    0.085    0.000    0.085    0.000 tensor.py:126(tensor)
+     4000    0.004    0.000    0.008    0.000 tensor.py:150(__iter__)
+     4000    0.001    0.000    0.001    0.000 tensor.py:382(__init__)
+     4000    0.000    0.000    0.000    0.000 tensor.py:386(__iter__)
+  4004000    2.156    0.000    7.640    0.000 tensor.py:389(__next__)
+  6018000    0.883    0.000    3.548    0.000 tensor.py:44(_get_rhs)
+1003000/3000    1.019    0.000    3.066    0.001 tensor.py:50(_bool_operator_resolver)
+ 11029000    2.046    0.000    7.148    0.000 tensor.py:60(__init__)
+  1000000    0.127    0.000    0.127    0.000 tensor.py:64(__bool__)
+     1000    0.002    0.000    0.003    0.000 tensor.py:67(__neg__)
+     1000    0.001    0.000    0.010    0.000 tensor.py:78(__lt__)
+1002000/2000    0.260    0.000    3.058    0.002 tensor.py:81(__gt__)
+2002000/2000    1.684    0.000    5.665    0.003 tensor.py:90(__add__)
+1005000/5000    1.001    0.000    5.316    0.001 tensor.py:93(__sub__)
+  1001000    0.663    0.000    2.440    0.000 tensor.py:96(__rsub__)
+     7000    0.364    0.000    5.534    0.001 tensor.py:99(__mul__)
+     1000    0.003    0.000    0.020    0.000 tensor_impl_np.py:104(round)
+     3000    0.005    0.000   11.835    0.004 tensor_impl_np.py:112(where)
+     1000    0.002    0.000    0.004    0.000 tensor_impl_np.py:128(abs)
+     2000    0.001    0.000    0.001    0.000 tensor_impl_np.py:34(_is_native_bool)
+     1000    0.000    0.000    0.000    0.000 tensor_impl_np.py:69(backend)
+ 11033000    6.078    0.000    6.995    0.000 typing.py:868(__new__)
+     1000    0.137    0.000   31.621    0.032 vs_tensor.py:15(tune_range)
+ 11033000    0.917    0.000    0.917    0.000 {built-in method __new__ of type object at 0x8b4b80}
+ 18050000    2.183    0.000    2.183    0.000 {built-in method _abc._abc_instancecheck}
+     17/7    0.000    0.000    0.000    0.000 {built-in method _abc._abc_subclasscheck}
+     1000    0.000    0.000    0.000    0.000 {built-in method builtins.getattr}
+ 18054000    3.726    0.000    8.202    0.000 {built-in method builtins.isinstance}
+     4000    0.001    0.000    0.001    0.000 {built-in method builtins.iter}
+  4004000    0.609    0.000    0.609    0.000 {built-in method builtins.len}
+  4004000    0.362    0.000    0.362    0.000 {built-in method builtins.next}
+5000/4000    3.069    0.001   11.832    0.003 {built-in method numpy.core._multiarray_umath.implement_array_function}
+     4000    0.001    0.000    0.001    0.000 {built-in method numpy.geterrobj}
+     2000    0.002    0.000    0.002    0.000 {built-in method numpy.seterrobj}
+        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+     1000    0.004    0.000    0.004    0.000 {method 'round' of 'numpy.ndarray' objects}
+
+

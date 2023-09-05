@@ -162,3 +162,8 @@ def _(
 @functions.zeros_like.register(np.number)
 def _(a: Union[np.ndarray, np.number]) -> np.ndarray:
     return np.zeros_like(a)
+
+@functions.round.register(np.ndarray)
+@functions.round.register(np.number)
+def _(a: Union[np.ndarray, np.number], decimals: int = 0) -> np.ndarray:
+    return np.round(a, decimals=decimals)

@@ -102,6 +102,18 @@ class NPNNCFTensorBackend(NNCFTensorBackend):
     inf = np.inf
 
     @staticmethod
+    def round(tensor):
+        return NPNNCFTensor(np.round(tensor.tensor))
+
+    @staticmethod
+    def ones_like(tensor):
+        return NPNNCFTensor(np.ones_like(tensor.tensor))
+
+    @staticmethod
+    def where(cond, x, y):
+        return NPNNCFTensor(np.where(cond.tensor, x, y))
+
+    @staticmethod
     def isclose_all(tensor1: NPNNCFTensor, tensor2: NPNNCFTensor, rtol=1e-05, atol=1e-08) -> bool:
         return bool(np.isclose(tensor1.tensor, tensor2.tensor, rtol, atol))
 

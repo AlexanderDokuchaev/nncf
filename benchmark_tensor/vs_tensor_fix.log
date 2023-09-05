@@ -1,0 +1,56 @@
+ERROR:nncf:Neither PyTorch, TensorFlow, ONNX or OpenVINO Python packages have been found in your Python environment.
+Please install one of the supported frameworks above in order to use NNCF on top of it.
+See the installation guide at https://github.com/openvinotoolkit/nncf#installation for help.
+         350024 function calls (349012 primitive calls) in 0.172 seconds
+
+   Ordered by: standard name
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+     1000    0.001    0.000    0.004    0.000 <__array_function__ internals>:177(around)
+     1000    0.001    0.000    0.006    0.000 <__array_function__ internals>:177(round_)
+     3000    0.002    0.000    0.013    0.000 <__array_function__ internals>:177(where)
+     2000    0.002    0.000    0.002    0.000 _ufunc_config.py:132(geterr)
+     2000    0.003    0.000    0.007    0.000 _ufunc_config.py:33(seterr)
+     1000    0.000    0.000    0.000    0.000 _ufunc_config.py:426(__init__)
+     1000    0.001    0.000    0.004    0.000 _ufunc_config.py:430(__enter__)
+     1000    0.001    0.000    0.004    0.000 _ufunc_config.py:435(__exit__)
+     11/5    0.000    0.000    0.000    0.000 abc.py:100(__subclasscheck__)
+    50000    0.009    0.000    0.017    0.000 abc.py:96(__instancecheck__)
+        1    0.000    0.000    0.000    0.000 cProfile.py:133(__exit__)
+     2000    0.000    0.000    0.000    0.000 fromnumeric.py:3241(_around_dispatcher)
+     1000    0.001    0.000    0.003    0.000 fromnumeric.py:3245(around)
+     1000    0.001    0.000    0.005    0.000 fromnumeric.py:3754(round_)
+     1000    0.001    0.000    0.003    0.000 fromnumeric.py:51(_wrapfunc)
+     3000    0.000    0.000    0.000    0.000 multiarray.py:345(where)
+     2000    0.005    0.000    0.010    0.000 tensor.py:105(__truediv__)
+     1000    0.004    0.000    0.006    0.000 tensor.py:108(__rtruediv__)
+    24000    0.003    0.000    0.003    0.000 tensor.py:126(tensor)
+    18000    0.006    0.000    0.019    0.000 tensor.py:44(_get_rhs)
+     3000    0.009    0.000    0.017    0.000 tensor.py:50(_bool_operator_resolver)
+    29000    0.008    0.000    0.027    0.000 tensor.py:60(__init__)
+     1000    0.002    0.000    0.003    0.000 tensor.py:67(__neg__)
+     1000    0.001    0.000    0.007    0.000 tensor.py:78(__lt__)
+     2000    0.001    0.000    0.012    0.000 tensor.py:81(__gt__)
+     2000    0.004    0.000    0.009    0.000 tensor.py:90(__add__)
+     5000    0.011    0.000    0.025    0.000 tensor.py:93(__sub__)
+     1000    0.003    0.000    0.005    0.000 tensor.py:96(__rsub__)
+     7000    0.012    0.000    0.032    0.000 tensor.py:99(__mul__)
+     1000    0.001    0.000    0.010    0.000 tensor_impl_np.py:104(round)
+     3000    0.004    0.000    0.022    0.000 tensor_impl_np.py:112(where)
+     1000    0.002    0.000    0.004    0.000 tensor_impl_np.py:128(abs)
+     2000    0.001    0.000    0.001    0.000 tensor_impl_np.py:34(_is_native_bool)
+     1000    0.000    0.000    0.000    0.000 tensor_impl_np.py:69(backend)
+    29000    0.018    0.000    0.022    0.000 typing.py:868(__new__)
+     1000    0.016    0.000    0.169    0.000 vs_tensor_fix.py:15(tune_range)
+    29000    0.003    0.000    0.003    0.000 {built-in method __new__ of type object at 0x8b4b80}
+    50000    0.008    0.000    0.008    0.000 {built-in method _abc._abc_instancecheck}
+     11/5    0.000    0.000    0.000    0.000 {built-in method _abc._abc_subclasscheck}
+     1000    0.000    0.000    0.000    0.000 {built-in method builtins.getattr}
+    54000    0.016    0.000    0.033    0.000 {built-in method builtins.isinstance}
+5000/4000    0.012    0.000    0.016    0.000 {built-in method numpy.core._multiarray_umath.implement_array_function}
+     4000    0.001    0.000    0.001    0.000 {built-in method numpy.geterrobj}
+     2000    0.001    0.000    0.001    0.000 {built-in method numpy.seterrobj}
+        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+     1000    0.002    0.000    0.002    0.000 {method 'round' of 'numpy.ndarray' objects}
+
+

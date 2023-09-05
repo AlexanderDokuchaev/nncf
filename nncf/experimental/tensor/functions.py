@@ -324,6 +324,19 @@ def zeros_like(a: TTensor) -> TTensor:
     return Tensor(zeros_like(a.data))
 
 
+@functools.singledispatch
+@_tensor_guard
+def round(a: TTensor, decimals=0) -> TTensor:  # pylint: disable=redefined-builtin
+    """
+    Evenly round to the given number of decimals.
+    :param a: Input data.
+    :param decimals: Number of decimal places to round to (default: 0). If decimals is negative,
+      it specifies the number of positions to the left of the decimal point.
+    :return: An array of the same type as a, containing the rounded values.
+    """
+    return Tensor(round(a.data, decimals))
+
+
 __all__ = [
     "device",
     "squeeze",
@@ -345,6 +358,7 @@ __all__ = [
     "minimum",
     "where",
     "zeros_like",
+    "round",
 ]
 
 

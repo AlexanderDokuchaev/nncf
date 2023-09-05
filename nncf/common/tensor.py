@@ -64,6 +64,9 @@ class NNCFTensor(Generic[TensorType], abc.ABC):
     def __bool__(self):
         return bool(self._tensor)
 
+    def __neg__(self) -> "Tensor":
+        return self.__class__(-self._tensor)
+
     def __eq__(self, other: Any) -> "NNCFTensor":
         # Assuming every backend implements this basic semantic
         return self._bool_operator_resolver(self._tensor.__eq__, other)
@@ -90,6 +93,9 @@ class NNCFTensor(Generic[TensorType], abc.ABC):
     def __sub__(self, other: Any) -> "NNCFTensor":
         return self.__class__(self._tensor - self._get_rhs(other))
 
+    def __rsub__(self, other: Any) -> "NNCFTensor":
+        return self.__class__(self._get_rhs(other) - self._tensor)
+
     def __mul__(self, other: Any) -> "NNCFTensor":
         return self.__class__(self._tensor * self._get_rhs(other))
 
@@ -98,6 +104,9 @@ class NNCFTensor(Generic[TensorType], abc.ABC):
 
     def __truediv__(self, other: Any) -> "NNCFTensor":
         return self.__class__(self._tensor / self._get_rhs(other))
+
+    def __rtruediv__(self, other: Any) -> "NNCFTensor":
+        return self.__class__(self._get_rhs(other) / self._tensor)
 
     def __len__(self) -> int:
         return len(self._tensor)
@@ -197,6 +206,18 @@ class NNCFTensor(Generic[TensorType], abc.ABC):
 
 class NNCFTensorBackend(abc.ABC):
     inf = None  # TODO(vshampor): IMPLEMENT ME
+
+    @staticmethod
+    def round(tensor):
+        pass
+
+    @staticmethod
+    def ones_like(tensor):
+        pass
+
+    @staticmethod
+    def where(cond, x, y):
+        pass
 
     @staticmethod
     @abstractmethod
