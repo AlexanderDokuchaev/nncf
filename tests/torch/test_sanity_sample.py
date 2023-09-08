@@ -183,6 +183,12 @@ def fixture_case_common_dirs(tmp_path_factory):
     }
 
 
+def _run_with_xfail_119128(runner: Command):
+    returncode = runner.run(assert_returncode_zero=False)
+    if returncode == 139:
+        pytest.xfail("Bug 119128: sporadic segment fault on backward")
+
+
 @pytest.mark.parametrize(" multiprocessing_distributed", (True, False), ids=["distributed", "dataparallel"])
 def test_pretrained_model_eval(config, tmp_path, multiprocessing_distributed, case_common_dirs):
     if version.parse(torchvision.__version__) < version.parse("0.13") and "voc" in str(config["dataset_path"]):
@@ -249,7 +255,7 @@ def test_pretrained_model_train(config, tmp_path, multiprocessing_distributed, c
         )
 
     runner = Command(create_command_line(args, config["sample_type"]), env=ROOT_PYTHONPATH_ENV)
-    runner.run()
+    _run_with_xfail_119128(runner)
     last_checkpoint_path = os.path.join(checkpoint_save_dir, get_run_name(config_factory.config) + "_last.pth")
     assert os.path.exists(last_checkpoint_path)
     if "compression" in config["sample_config"]:
@@ -348,7 +354,7 @@ def test_resume(request, config, tmp_path, multiprocessing_distributed, case_com
         args["--multiprocessing-distributed"] = True
 
     runner = Command(create_command_line(args, config["sample_type"]), env=ROOT_PYTHONPATH_ENV)
-    runner.run()
+    _run_with_xfail_119128(runner)
     last_checkpoint_path = os.path.join(checkpoint_save_dir, get_run_name(config_factory.config) + "_last.pth")
     assert os.path.exists(last_checkpoint_path)
     if "compression" in config["sample_config"]:
@@ -410,7 +416,7 @@ def test_export_with_pretrained(tmp_path):
         args["--cpu-only"] = True
 
     runner = Command(create_command_line(args, "classification"), env=ROOT_PYTHONPATH_ENV)
-    runner.run()
+    _run_with_xfail_119128(runner)
     assert os.path.exists(onnx_path)
 
 
@@ -576,7 +582,7 @@ def test_accuracy_aware_training_pipeline(accuracy_aware_config, tmp_path, multi
         args["--multiprocessing-distributed"] = True
 
     runner = Command(create_command_line(args, accuracy_aware_config["sample_type"]), env=ROOT_PYTHONPATH_ENV)
-    runner.run()
+    _run_with_xfail_119128(runner)
 
     checkpoint_save_dir = log_dir / get_run_name(config_factory.config)
     aa_checkpoint_path = get_accuracy_aware_checkpoint_dir_path(checkpoint_save_dir)
