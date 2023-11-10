@@ -47,7 +47,6 @@ from nncf.torch.tensor_statistics.collectors import PTNNCFCollectorTensorProcess
 from nncf.torch.tensor_statistics.statistics import PTMinMaxTensorStatistic
 
 
-# pylint:disable=too-many-public-methods
 class PTMinMaxAlgoBackend(MinMaxAlgoBackend):
     TARGET_TYPE_TO_PT_INS_TYPE_MAP = {
         TargetType.PRE_LAYER_OPERATION: TargetType.OPERATOR_PRE_HOOK,
@@ -302,6 +301,8 @@ class PTMinMaxAlgoBackend(MinMaxAlgoBackend):
                 om.PTAddMetatype,
                 om.PTPowerMetatype,
                 om.PTSubMetatype,
+                om.PTAvgPool2dMetatype,
+                om.PTAvgPool3dMetatype,
                 om.PTMeanMetatype,
                 om.PTSumMetatype,
                 om.PTReduceL2,
@@ -312,6 +313,9 @@ class PTMinMaxAlgoBackend(MinMaxAlgoBackend):
                 om.PTModuleLayerNormMetatype,
                 om.PTGroupNormMetatype,
                 om.PTModuleGroupNormMetatype,
+                # Batchnorm
+                om.PTBatchNormMetatype,
+                om.PTModuleBatchNormMetatype,
             ]
             if device != TargetDevice.CPU_SPR:
                 types.append(om.PTMulMetatype)

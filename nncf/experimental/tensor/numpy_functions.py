@@ -9,7 +9,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Callable, List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -61,15 +61,17 @@ def _(a: Union[np.ndarray, np.generic]) -> np.ndarray:
 
 
 @_register_numpy_types(fns.max)
-def _(a: Union[np.ndarray, np.generic], axis: Optional[Union[int, Tuple[int, ...]]] = None) -> np.ndarray:
-    return np.max(a, axis=axis)
+def _(
+    a: Union[np.ndarray, np.generic], axis: Optional[Union[int, Tuple[int, ...]]] = None, keepdims: bool = False
+) -> np.ndarray:
+    return np.max(a, axis=axis, keepdims=keepdims)
 
 
 @_register_numpy_types(fns.min)
 def _(
-    a: Union[np.ndarray, np.generic], axis: Optional[Union[int, Tuple[int, ...]]] = None
+    a: Union[np.ndarray, np.generic], axis: Optional[Union[int, Tuple[int, ...]]] = None, keepdims: bool = False
 ) -> Union[np.ndarray, np.generic]:
-    return np.min(a, axis=axis)
+    return np.min(a, axis=axis, keepdims=keepdims)
 
 
 @_register_numpy_types(fns.abs)
@@ -186,21 +188,3 @@ def _(a: Union[np.ndarray, np.generic], axis: Union[int, Tuple[int, ...]] = None
 @_register_numpy_types(fns.round)
 def _(a: Union[np.ndarray, np.generic], decimals: int = 0) -> np.ndarray:
     return np.round(a, decimals=decimals)
-
-
-@_register_numpy_types(fns._binary_op_nowarn)  # pylint: disable=protected-access
-def _(
-    a: Union[np.ndarray, np.generic], b: Union[np.ndarray, np.generic, float], operator_fn: Callable
-) -> Union[np.ndarray, np.generic]:
-    # Run operator with disabled warning
-    with np.errstate(invalid="ignore", divide="ignore"):
-        return operator_fn(a, b)
-
-
-@_register_numpy_types(fns._binary_reverse_op_nowarn)  # pylint: disable=protected-access
-def _(
-    a: Union[np.ndarray, np.generic], b: Union[np.ndarray, np.generic, float], operator_fn: Callable
-) -> Union[np.ndarray, np.generic]:
-    # Run operator with disabled warning
-    with np.errstate(invalid="ignore", divide="ignore"):
-        return operator_fn(b, a)
