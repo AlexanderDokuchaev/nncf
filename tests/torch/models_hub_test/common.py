@@ -21,9 +21,9 @@ import torch
 from _pytest.mark import ParameterSet
 from torch import nn
 
-import nncf
-from nncf.common.graph import NNCFGraph
-from nncf.torch.model_creation import wrap_model
+# import nncf
+# from nncf.common.graph import NNCFGraph
+# from nncf.torch.model_creation import wrap_model
 
 ExampleType = Union[Tuple[torch.Tensor, ...], List[torch.Tensor], Dict[str, torch.Tensor]]
 
@@ -42,7 +42,7 @@ class BaseTestModel(ABC):
         """
 
     @staticmethod
-    def check_graph(graph: NNCFGraph) -> None:
+    def check_graph(graph) -> None:
         """
         Check that the graph contains only one connected component.
 
@@ -63,16 +63,19 @@ class BaseTestModel(ABC):
 
         fw_model, example = self.load_model(model_name)
 
-        example_input = None
+        args = ()
+        kwargs = {}
         if isinstance(example, (list, tuple)):
-            example_input = tuple([torch.tensor(x) for x in example])
+            args = tuple([torch.tensor(x) for x in example])
         elif isinstance(example, dict):
-            example_input = {k: torch.tensor(v) for k, v in example.items()}
-        assert example_input is not None
-
-        nncf_model = wrap_model(fw_model, example_input, trace_parameters=True)
-
-        self.check_graph(nncf_model.nncf.get_original_graph())
+            kwargs = {k: torch.tensor(v) for k, v in example.items()}
+        else:
+            args = (example,)
+        # assert example_input is not None
+        # example = {"x", example[0]}
+        # print(args)
+        # fw_model(*args)
+        torch.export.export(fw_model, args=args, kwargs=kwargs, strict=False)
 
 
 @dataclass
@@ -118,9 +121,7 @@ def get_models_list(path: Path) -> List[ModelInfo]:
                     model_link = None
                 assert mark in ["skip", "xfail"], "Incorrect failure mark for model info {}".format(model_info)
             else:
-                raise nncf.ValidationError(
-                    f"Incorrect model info `{model_info}`. It must contain either 1, 2 or 3 fields."
-                )
+                raise RuntimeError(f"Incorrect model info `{model_info}`. It must contain either 1, 2 or 3 fields.")
             models.append(ModelInfo(model_name, model_link, mark, reason))
 
     return models

@@ -28,7 +28,7 @@ MODEL_LIST_FILE = Path(__file__).parent / "timm_models.txt"
 
 class TestTimmModel(BaseTestModel):
     def load_model(self, model_name: str) -> Tuple[nn.Module, ExampleType]:
-        m = timm.create_model(model_name, pretrained=False)
+        m = timm.create_model(model_name, pretrained=False, num_classes=1000, in_chans=3).eval()
         cfg = timm.get_pretrained_cfg(model_name)
         shape = [1] + list(cfg.input_size)
         example = (torch.randn(shape),)

@@ -313,7 +313,7 @@ class TestTransformersModel(BaseTestModel):
             else:
                 example = (torch.randint(1, 1000, [1, 100]),)
         example = filter_example(model, example)
-        model.eval()
+        model = model.eval()
         # Uncomment to check inference original model
         # if isinstance(example, dict):
         #     model(**example)
