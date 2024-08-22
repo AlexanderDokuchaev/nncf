@@ -25,6 +25,7 @@ TModel = TypeVar("TModel")
 @api()
 class CompressionLoss(ABC):
     """
+    TEST
     Used to calculate the additional loss to be added to the base loss during the
     training process. It uses the model graph to measure variables and activations
     values of the layers during the loss construction. For example, the $L_0$-based
@@ -52,6 +53,7 @@ class CompressionLoss(ABC):
         """
         Returns the compression loss state.
         """
+        pass
 
     def __call__(self, *args, **kwargs) -> Any:
         """
