@@ -28,8 +28,8 @@ jobs:
       - name: Set output value
         id: status
         run: |
-          echo "api_status=$(cat api_status.json | jq .status)" >> $GITHUB_OUTPUT
-          echo "pr_number=$(cat api_status.json | jq .pr_number)" >> $GITHUB_OUTPUT
+          echo "api_status=$(cat api_status.json | jq -r .status)" >> $GITHUB_OUTPUT
+          echo "pr_number=$(cat api_status.json | jq -r .pr_number)" >> $GITHUB_OUTPUT
 
       - name: Print api_status
         run: echo ${{ steps.status.outputs.api_status }} ${{ steps.status.outputs.pr_number }} ${{ steps.status.outputs.api_status == 'add' }}
