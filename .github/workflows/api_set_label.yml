@@ -23,11 +23,13 @@ jobs:
             name: api_status
 
       - name: Get api_status
-        run: cat api_status.txt
+        run: cat api_status.json
 
       - name: Set output value
         id: status
-        run: echo "api_status=$(cat api_status.txt)" >> $GITHUB_OUTPUT
+        run: |
+          echo "api_status=$(cat api_status.json | jq .status)" >> $GITHUB_OUTPUT
+          echo "pr_number=$(cat api_status.json | jq .pr_number)" >> $GITHUB_OUTPUT
 
       - name: Print api_status
         run: echo ${{ steps.status.outputs.api_status }}
@@ -39,7 +41,7 @@ jobs:
             github-token: "${{ secrets.GITHUB_TOKEN }}"
             script: |
               github.rest.issues.addLabels({
-                  issue_number: ${{ github.event.workflow_run.pull_requests[0].number }},
+                  issue_number: ${{ steps.status.outputs.pr_number }},
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   labels: ["API"]
@@ -52,7 +54,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             github.rest.issues.addLabels({
-              issue_number: ${{ github.event.workflow_run.pull_requests[0].number }},
+              issue_number: ${{ steps.status.outputs.pr_number }},
               owner: context.repo.owner,
               repo: context.repo.repo,
               labels: ["API"]
