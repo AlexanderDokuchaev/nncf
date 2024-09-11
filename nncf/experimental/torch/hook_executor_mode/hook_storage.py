@@ -94,6 +94,8 @@ class HookStorage(nn.Module):
         str_port_id = str(port_id)
         for group_name in sorted(storage):
             if op_name in storage[group_name] and str_port_id in storage[group_name][op_name]:
+                # if op_name == "_model:layer1:0:bn2/batch_norm/0":
+                #     print("EXECUTE_HOOK", group_name, op_name, str_port_id)
                 value = storage[group_name][op_name][str_port_id](value)
         return value
 

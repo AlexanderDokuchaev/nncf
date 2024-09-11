@@ -43,10 +43,11 @@ class TensorDesc(Enum):
 class TensorMeta:
     dtype: torch.dtype
     shape: Tuple[int, ...]
+    requires_grad: bool
 
     @staticmethod
     def from_tensor(tensor: torch.Tensor) -> TensorMeta:
-        return TensorMeta(tensor.dtype, tuple(tensor.shape))
+        return TensorMeta(tensor.dtype, tuple(tensor.shape), tensor.requires_grad)
 
 
 @dataclass

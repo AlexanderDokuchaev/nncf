@@ -39,13 +39,10 @@ class ForwardWithHooks:
         self.orig_forward = orig_forward
         return self
 
-    def __call__(self, model, *args: Tuple[Any], **kwargs: Dict[str, Any]):
+    def __call__(self, model, *args: Tuple[Any], **keywords: Dict[str, Any]):
 
-        with HookExecutorMode(model=model, hook_storage=get_hook_storage(model)) as ctx:
-            args, kwargs = ctx.execute_input_hooks(args, kwargs)
-            outputs = self.orig_forward(*args, **kwargs)
-            outputs = ctx.execute_output_hooks(outputs)
-            return outputs
+        with HookExecutorMode(model=model, hook_storage=get_hook_storage(model)):
+            return self.orig_forward(*args, **keywords)
 
     def __repr__(self):
         return f"ForwardWithHooks.{repr(self.orig_forward)}"
@@ -162,6 +159,7 @@ def is_wrapped(model: nn.Module) -> bool:
     :return: `True` if the model's `forward` method is an instance of `ForwardWithHooks`,
         indicating that the model has been wrapped; `False` otherwise.
     """
+    return True
     return isinstance(model.forward, ForwardWithHooks)
 
 
@@ -176,21 +174,22 @@ def get_hook_storage(model: nn.Module) -> HookStorage:
     :param model: The PyTorch model from which to retrieve the `HookStorage`.
     :return: The `HookStorage` module associated with the model.
     """
-    # if not is_wrapped(model):
-    #     raise nncf.InstallationError("Model is not wrapped")
+    if not is_wrapped(model):
+        raise nncf.InstallationError("Model is not wrapped")
     return getattr(model, ATR_HOOK_STORAGE)
 
 
 def insert_hook(
-    model: nn.Module, hook_type: HookType, group_name: str, op_name: str, port_id: int, module: nn.Module
+    model: nn.Module, hook_type: HookType, group_name: str, op_name: str, port_id: int, hook_module: nn.Module
 ):
     """
     Inserts a hook into the model's `HookStorage` for a specified operation.
     """
+    print("insert_hook", op_name)
     storage = get_hook_storage(model)
     if storage is None:
         raise nncf.InternalError("Insertion hook to not wrapped model")
-    storage.insert_hook(hook_type, group_name, op_name, port_id, module)
+    storage.insert_hook(hook_type, group_name, op_name, port_id, hook_module)
 
 
 def remove_group(model: nn.Module, group_name: str):

@@ -90,7 +90,6 @@ class InsertionPointGraph(nx.DiGraph):
         If left unspecified, every node in `nncf_graph` will be allowed to have a single post-hook for its output
          (post-hooking separate tensors in an operation's output is not currently supported)
         """
-
         super().__init__()
         self._base_nx_graph = deepcopy(nncf_graph.get_nx_graph_copy())
         if weight_modifiable_node_names is None:
@@ -184,6 +183,11 @@ class InsertionPointGraph(nx.DiGraph):
 
             if original_node.node_name in target_node_name_vs_post_hook_ips:
                 post_hook_ips = target_node_name_vs_post_hook_ips[original_node.node_name]
+                if len(post_hook_ips) > 1:
+                    print(post_hook_ips)
+                    for x in post_hook_ips:
+                        print(x.target_node_name)
+                    # exit(1)
                 assert len(post_hook_ips) == 1, "Multiple post-hooks for a single NNCFGraph node are not supported!"
                 post_hook_ip = next(iter(post_hook_ips))
                 post_hook_ip_attrs = {
@@ -258,7 +262,11 @@ class InsertionPointGraph(nx.DiGraph):
     def _get_default_post_hook_ip_list(nncf_graph: NNCFGraph) -> List[PostHookInsertionPoint]:
         # Post-hook all nodes, post hook applies to the entire op output
         allowed_post_hook_insertion_points = []
+        node_names = []
         for nncf_node in nncf_graph.get_all_nodes():
+            if nncf_node.node_name in node_names:
+                print( nncf_node.node_name)
+            node_names.append(nncf_node.node_name)
             allowed_post_hook_insertion_points.append(PostHookInsertionPoint(nncf_node.node_name))
         return allowed_post_hook_insertion_points
 

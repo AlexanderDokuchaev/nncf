@@ -18,6 +18,11 @@ import nncf
 from nncf.common.factory import NNCFGraphFactory
 from nncf.common.quantization.structs import QuantizationPreset
 from nncf.data import Dataset
+from nncf.experimental.torch.hook_executor_mode.wrapper import wrap_model
+from nncf.experimental.torch.hook_executor_mode.nncf_graph_builder import GraphConverter
+
+# from nncf.torch.model_creation import wrap_model
+from nncf.experimental.torch.hook_executor_mode.wrapper import is_wrapped
 from nncf.parameters import CompressWeightsMode
 from nncf.parameters import ModelType
 from nncf.parameters import QuantizationMode
@@ -30,7 +35,6 @@ from nncf.quantization.algorithms.weight_compression.algorithm import WeightComp
 from nncf.quantization.quantize_model import warning_model_no_batchwise_support
 from nncf.scopes import IgnoredScope
 from nncf.torch.graph.operator_metatypes import OPERATIONS_OUTPUT_HAS_NO_BATCH_AXIS
-from nncf.torch.model_creation import wrap_model
 
 DEFAULT_RANGE_TYPE = "mean_min_max"
 
@@ -60,7 +64,12 @@ def quantize_impl(
     copied_model = deepcopy(model)
 
     example_input = next(iter(calibration_dataset.get_inference_data()))
-    nncf_network = wrap_model(copied_model.eval(), example_input, trace_parameters=True)
+    if not is_wrapped(model):
+        nncf_network = wrap_model(copied_model)
+    else:
+        nncf_network = copied_model
+    nncf_network.eval()
+    nncf_network.example_input = example_input
 
     quantization_algorithm = PostTrainingQuantization(
         preset=preset,
@@ -71,11 +80,11 @@ def quantize_impl(
         ignored_scope=ignored_scope,
         advanced_parameters=advanced_parameters,
     )
-    graph = nncf_network.nncf.get_graph()
+    graph = GraphConverter.build_nncf_graph(nncf_network)
     warning_model_no_batchwise_support(graph, advanced_parameters, model_type, OPERATIONS_OUTPUT_HAS_NO_BATCH_AXIS)
     quantized_model = quantization_algorithm.apply(nncf_network, graph, dataset=calibration_dataset)
 
-    quantized_model.nncf.disable_dynamic_graph_building()
+    # quantized_model.nncf.disable_dynamic_graph_building()
 
     return quantized_model
 

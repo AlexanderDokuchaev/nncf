@@ -202,7 +202,7 @@ class PTMinMaxAlgoBackend(MinMaxAlgoBackend):
 
     @staticmethod
     def get_weight_name(nncf_graph: NNCFGraph, target_point: PTTargetPoint) -> str:
-        return nncf_graph.get_node_by_name(target_point.target_node_name).layer_name
+        return target_point.target_node_name
 
     @staticmethod
     def should_quantize_weight(weight_name: str, quantized_weight_names: Set[str]) -> bool:
@@ -228,15 +228,14 @@ class PTMinMaxAlgoBackend(MinMaxAlgoBackend):
         """
 
         is_weights = target_point.is_weight_target_point()
+        input_shape = nncf_graph.get_input_shape_for_insertion_point(target_point)
         if is_weights:
             node_with_weight = nncf_graph.get_node_by_name(target_point.target_node_name)
-            weight_node = get_const_node(node_with_weight, target_point.input_port_id, nncf_graph)
-            input_shape = weight_node.layer_attributes.shape
             channel_axes = get_weight_channel_axes(
                 node_with_weight.metatype, len(input_shape), target_point.input_port_id
             )
         else:
-            input_shape = nncf_graph.get_input_shape_for_insertion_point(target_point)
+
             channel_axes = (1,)  # channel dim for activations
 
         if len(channel_axes):

@@ -34,7 +34,6 @@ from nncf.experimental.torch.hook_executor_mode.hook_executor_mode import OpMeta
 from nncf.experimental.torch.hook_executor_mode.hook_storage import HookStorage
 from nncf.experimental.torch.hook_executor_mode.weak_map import WeakUnhashableKeyMap
 from nncf.experimental.torch.hook_executor_mode.wrapper import get_hook_storage
-from nncf.experimental.torch.hook_executor_mode.wrapper import is_wrapped
 
 
 class GraphBuilderMode(HookExecutorMode):
@@ -336,8 +335,8 @@ def build_graph(model: nn.Module, *args: Any, **kwargs: Any) -> nx.DiGraph:
     :param model: The PyTorch model for which the computational graph will be built.
     :return: A nx.DiGraph where nodes represent operations of model.
     """
-    if not is_wrapped(model):
-        raise nncf.InstallationError("Model is not wrapped")
+    # if not is_wrapped(model):
+    #     raise nncf.InstallationError("Model is not wrapped")
 
     with torch.enable_grad():
         # Gradient use to get information about __get__ functions to detect tensor.(T, mT, H, mH) attributes

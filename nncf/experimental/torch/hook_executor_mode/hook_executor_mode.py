@@ -18,10 +18,10 @@ from dataclasses import dataclass
 from dataclasses import field
 from types import MethodType
 from types import TracebackType
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type
+from typing import Any, Callable, Dict, List, MutableMapping, Optional, Tuple, Type
 from weakref import ReferenceType
 from weakref import ref
-
+from torch import Tensor
 from torch import nn
 from torch.overrides import TorchFunctionMode
 
@@ -29,6 +29,7 @@ from nncf.common.logging import nncf_logger as logger
 from nncf.experimental.torch.hook_executor_mode.hook_storage import HookStorage
 from nncf.experimental.torch.hook_executor_mode.hook_storage import HookType
 from nncf.experimental.torch.hook_executor_mode.operation_name import OperationName
+from nncf.experimental.torch.hook_executor_mode.weak_map import WeakUnhashableKeyMap
 
 IGNORED_FN_NAMES = [
     "__repr__",
@@ -36,6 +37,7 @@ IGNORED_FN_NAMES = [
     "dim",
     "size",
     "is_floating_point",
+    '_set_grad_enabled',
 ]
 
 
@@ -103,7 +105,11 @@ class HookExecutorMode(TorchFunctionMode):
         self.module_name_map: Dict[ReferenceType[nn.Module], str] = {ref(m): n for n, m in self.model.named_modules()}
         self.module_name_map[ref(model)] = ""
         self.nested_enter_count = 0
-        self.op_calls: Dict[str, Dict[str, int]] = dict()
+        self.op_calls: Dict[str, int] = defaultdict(int)
+        self.const_name_map: MutableMapping[ref[Tensor], str] = WeakUnhashableKeyMap()
+        for name, parameter in self.model.named_parameters():
+            self.const_name_map[parameter] = name
+        self.in_process_const = False
 
     def _get_wrapped_call(self, fn_call: MethodType) -> Callable[..., Any]:
         """
@@ -180,14 +186,16 @@ class HookExecutorMode(TorchFunctionMode):
         """
         kwargs = kwargs or {}
 
-        if not self.module_call_stack:
-            # Ignore all function before call source module
-            return func(*args, **kwargs)
-
         fn_name = func.__name__
         if fn_name in IGNORED_FN_NAMES:
             return func(*args, **kwargs)
         op_name = self.get_current_executed_op_name(fn_name)
+        # if str(op_name) == "_model:layer1:0:bn2/batch_norm/0":
+        #     print(op_name)
+        #     import traceback
+        #     # print(f"------------: {op_meta.op_name} {op_meta.func.__name__}")
+        #     for line in traceback.format_stack()[-8:-3]:
+        #         print(line.strip())
 
         full_fn_name = _get_full_fn_name(func)
         logger.debug(f"HookExecutorMode.__torch_function__: {full_fn_name=} {op_name=}")
@@ -205,9 +213,10 @@ class HookExecutorMode(TorchFunctionMode):
 
         :param module: The module to push onto the call stack.
         """
+        assert isinstance(module, nn.Module)
         self.module_call_stack.append(module)
         module_name = self.get_current_module_name()
-        self.op_calls[module_name] = defaultdict(int)
+        # self.op_calls[module_name] = defaultdict(int)
         logger.debug(f"HookExecutorMode.push_module_call_stack: {module_name=}")
 
     def pop_module_call_stack(self) -> None:
@@ -215,7 +224,7 @@ class HookExecutorMode(TorchFunctionMode):
         Pop a module from the call stack and remove its operation calls.
         """
         module_name = self.get_current_module_name()
-        del self.op_calls[module_name]
+        # del self.op_calls[module_name]
         self.module_call_stack.pop()
         logger.debug(f"HookExecutorMode.pop_module_call_stack: {module_name=}")
 
@@ -225,7 +234,19 @@ class HookExecutorMode(TorchFunctionMode):
 
         :returns: The name of the current module.
         """
-        return self.module_name_map[ref(self.module_call_stack[-1])]
+        name_parts = []
+        prev_module = self.module_call_stack[0]
+        for module in self.module_call_stack[1:]:
+            for n, m in prev_module.named_children():
+                if m is module:
+                    name_parts.append(n)
+                    break
+            prev_module = module
+        module_name = ".".join(name_parts)
+        # print(module_name , self.module_name_map[ref(self.module_call_stack[-1])])
+        return module_name
+
+        # return self.module_name_map[ref(self.module_call_stack[-1])]
 
     def get_current_executed_op_name(self, fn_name: str) -> str:
         """
@@ -236,7 +257,7 @@ class HookExecutorMode(TorchFunctionMode):
         """
         module_name = self.get_current_module_name()
         op_name = OperationName(module_name, fn_name)
-        op_name.call_id = self.op_calls[module_name][str(op_name)]
+        op_name.call_id = self.op_calls[str(op_name)]
         return str(op_name)
 
     def register_op(self, fn_name: str) -> None:
@@ -247,7 +268,7 @@ class HookExecutorMode(TorchFunctionMode):
         """
         module_name = self.get_current_module_name()
         op_name = str(OperationName(module_name, fn_name))
-        self.op_calls[module_name][op_name] += 1
+        self.op_calls[op_name] += 1
 
     def execute_pre_hooks(
         self, args: Tuple[Any, ...], kwargs: Dict[str, Any], op_meta: OpMeta
@@ -264,6 +285,13 @@ class HookExecutorMode(TorchFunctionMode):
 
         with self:
             for idx, value in enumerate(_args):
+                # name_in_model = self.const_name_map.get(value, None)
+                # if name_in_model is not None and not self.in_process_const:
+                #     self.in_process_const = True
+                #     value = self.hook_storage.execute_hook(HookType.POST_HOOK, name_in_model.replace(".", ":"), 0, value)
+                #     self.in_process_const = False
+
+
                 _args[idx] = self.hook_storage.execute_hook(HookType.PRE_HOOK, op_meta.op_name, idx, value)
 
             for port_id, kw_name in enumerate(kwargs, start=len(_args)):
@@ -296,3 +324,43 @@ class HookExecutorMode(TorchFunctionMode):
             else:
                 output = self.hook_storage.execute_hook(HookType.POST_HOOK, op_meta.op_name, 0, output)
         return output
+
+    def execute_input_hooks(self, args, kwargs):
+        args = list(args)
+        with self:
+            for idx, arg in enumerate(args):
+                op_name = f"arg_{idx}"
+                args[idx] = self.hook_storage.execute_hook(HookType.POST_HOOK, op_name, 0, arg)
+        # TODO: kwarg hooks
+        # for in_name, val in kwargs.items():
+        #     _call_fn_for_each_tensors(val, f"kwarg_{in_name}", self._register_model_input)
+        return args, kwargs
+
+    def execute_output_hooks(self,outputs: Any):
+        with self:
+            if isinstance(outputs, Tensor):
+                outputs = self.hook_storage.execute_hook(HookType.PRE_HOOK, "output", 0, outputs)
+            if isinstance(outputs, (list, tuple)):
+                outputs = list(outputs)
+                for idx, val in enumerate(outputs):
+                    outputs[idx] = self.hook_storage.execute_hook(HookType.PRE_HOOK, f"output_{idx}", 0, val)
+        return outputs
+
+
+
+def _call_fn_for_each_tensors(obj: Any, cur_name: str, fn: Callable[[str, torch.Tensor], None]) -> None:
+    """
+    Calls a function for each tensor in a nested structure.
+
+    :param obj: The nested structure containing tensors.
+    :param cur_name: The current name prefix for tensors.
+    :param fn: The function to call for each tensor.
+    """
+    if isinstance(obj, torch.Tensor):
+        fn(cur_name, obj)
+    elif isinstance(obj, dict):
+        for key, value in obj.items():
+            _call_fn_for_each_tensors(value, f"{cur_name}_{key}", fn)
+    elif isinstance(obj, (list, tuple, set)):
+        for idx, value in enumerate(obj):
+            _call_fn_for_each_tensors(value, f"{cur_name}_{idx}", fn)

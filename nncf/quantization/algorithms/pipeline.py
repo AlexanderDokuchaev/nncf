@@ -134,7 +134,7 @@ class Pipeline:
         :param model: This is the model after the (start_step_index - 1)-th pipeline
             step, or the initial model if start_step_index is 0.
         :param dataset: A dataset that holds the data items for pipeline steps.
-        :param graph: A graph assosiated with a model.
+        :param graph: A graph associated with a model.
         :param start_step_index: Zero-based pipeline step index from which the pipeline
             should be executed.
         :param step_index_to_statistics: A mapping from pipeline step index to statistics

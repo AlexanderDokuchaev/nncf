@@ -238,6 +238,11 @@ def create_pipeline_kwargs(test_model_param, subset_size, test_case_name, refere
     model_name = test_case_name.split("_backend_")[0]
     test_reference = reference_data[test_case_name]
     test_reference["metric_value_fp32"] = reference_data[f"{model_name}_backend_FP32"]["metric_value"]
+    if "advanced_parameters" in test_model_param["compression_params"]:
+        test_model_param["compression_params"]["advanced_parameters"].disable_bias_correction=True
+        test_model_param["compression_params"]["advanced_parameters"].smooth_quant_alpha=-1.0
+    else:
+        test_model_param["compression_params"]["advanced_parameters"] = nncf.AdvancedQuantizationParameters(disable_bias_correction=True, smooth_quant_alpha=-1.0)
 
     return {
         "reported_name": test_model_param["reported_name"],
@@ -270,34 +275,34 @@ def test_ptq_quantization(
     err_msg = None
     test_model_param = None
     start_time = time.perf_counter()
-    try:
-        if test_case_name not in ptq_reference_data:
-            raise nncf.ValidationError(f"{test_case_name} does not exist in 'reference_data.yaml'")
-        test_model_param = PTQ_TEST_CASES[test_case_name]
-        maybe_skip_test_case(test_model_param, run_fp32_backend, run_torch_cuda_backend, batch_size)
-        pipeline_cls = test_model_param["pipeline_cls"]
-        # Recalculates subset_size when subset_size is None
-        if batch_size is None:
-            batch_size = test_model_param.get("batch_size", 1)
-        if batch_size > 1 and subset_size is None:
-            subset_size = 300 // batch_size
-            print(f"Update subset_size value based on provided batch_size to {subset_size}.")
-        pipeline_kwargs = create_pipeline_kwargs(test_model_param, subset_size, test_case_name, ptq_reference_data)
-        pipeline_kwargs.update(
-            {
-                "output_dir": output_dir,
-                "data_dir": data_dir,
-                "no_eval": no_eval,
-                "run_benchmark_app": run_benchmark_app,
-                "batch_size": batch_size,
-                "memory_monitor": memory_monitor,
-            }
-        )
-        pipeline: BaseTestPipeline = pipeline_cls(**pipeline_kwargs)
-        pipeline.run()
-    except Exception as e:
-        err_msg = str(e)
-        traceback.print_exc()
+    # try:
+    if test_case_name not in ptq_reference_data:
+        raise nncf.ValidationError(f"{test_case_name} does not exist in 'reference_data.yaml'")
+    test_model_param = PTQ_TEST_CASES[test_case_name]
+    maybe_skip_test_case(test_model_param, run_fp32_backend, run_torch_cuda_backend, batch_size)
+    pipeline_cls = test_model_param["pipeline_cls"]
+    # Recalculates subset_size when subset_size is None
+    if batch_size is None:
+        batch_size = test_model_param.get("batch_size", 1)
+    if batch_size > 1 and subset_size is None:
+        subset_size = 300 // batch_size
+        print(f"Update subset_size value based on provided batch_size to {subset_size}.")
+    pipeline_kwargs = create_pipeline_kwargs(test_model_param, subset_size, test_case_name, ptq_reference_data)
+    pipeline_kwargs.update(
+        {
+            "output_dir": output_dir,
+            "data_dir": data_dir,
+            "no_eval": no_eval,
+            "run_benchmark_app": run_benchmark_app,
+            "batch_size": batch_size,
+            "memory_monitor": memory_monitor,
+        }
+    )
+    pipeline: BaseTestPipeline = pipeline_cls(**pipeline_kwargs)
+    pipeline.run()
+    # except Exception as e:
+    #     err_msg = str(e)
+    #     traceback.print_exc()
 
     if pipeline is not None:
         pipeline.cleanup_cache()

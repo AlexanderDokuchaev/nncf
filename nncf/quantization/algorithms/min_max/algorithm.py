@@ -901,7 +901,7 @@ class MinMaxQuantization(Algorithm):
                 self._algorithm_key in point.algorithm_to_tensor_collectors
                 and point.target_point == quantization_target_point
             )
-
+        graph.visualize_graph("1.dot")
         unified_ops_list = set()
         for unified_scale_group in unified_scale_groups:
             group_statistics = []
@@ -928,6 +928,8 @@ class MinMaxQuantization(Algorithm):
                     unified_values, is_per_channel=qconfig.per_channel, destination_type=destination_type
                 )
                 for quantization_target_point in unified_scale_group:
+                    command = self._backend_entity.create_convert_insertion_command(quantization_target_point, parameters)
+                    print("1", command)
                     transformation_layout.register(
                         self._backend_entity.create_convert_insertion_command(quantization_target_point, parameters)
                     )
@@ -938,6 +940,7 @@ class MinMaxQuantization(Algorithm):
                 graph, unified_scale_group, qconfig, parameters
             )
             for command in commands:
+                print("2", command)
                 transformation_layout.register(command)
             unified_ops_list.update(unified_scale_group)
 
@@ -960,7 +963,11 @@ class MinMaxQuantization(Algorithm):
                 half_range = quantization_target_point in quantization_points_overflow_fix
                 narrow_range = get_quantizer_narrow_range(qconfig, quant_group)
                 statistics = tensor_collector.get_statistics()
+                print(f"MINMAX: {target_node_name}")
                 if statistics.min_values is None or statistics.max_values is None:
+                    print("NO STAT")
+                    tensor_collector.get_statistics()
+                    # continue
                     raise nncf.InternalError(f"Statistics were not collected for the node {target_node_name}")
                 if self._mode is not None:
                     destination_type = self._quantization_params[quant_group].destination_type
@@ -977,7 +984,10 @@ class MinMaxQuantization(Algorithm):
                     command = self._backend_entity.create_quantizer_insertion_command(
                         graph, quantization_target_point, qconfig, parameters
                     )
+
+                print("3", command.target_points[0])
                 transformation_layout.register(command)
+        # exit(1)
         if not transformation_layout.transformations:
             nncf_logger.info("The model has no operations to apply quantization.")
         quantized_model = model_transformer.transform(transformation_layout)
@@ -989,7 +999,7 @@ class MinMaxQuantization(Algorithm):
         quantization_target_points, _ = self._get_quantization_target_points(model, graph)
         output = StatisticPointsContainer()
         for quantization_target_point, qconfig in quantization_target_points.items():
-            nncf_logger.debug(
+            print(
                 f"Adding target point {quantization_target_point.target_node_name}"
                 f" with type {quantization_target_point.type} for statistics collection"
             )

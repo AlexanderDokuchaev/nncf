@@ -47,7 +47,10 @@ class NNCFGraphFactory:
 
             return GraphConverter.create_nncf_graph(model)
         if model_backend == BackendType.TORCH:
-            return model.nncf.get_graph()
+            from nncf.experimental.torch.hook_executor_mode.nncf_graph_builder import GraphConverter
+
+            return GraphConverter.build_nncf_graph(model)
+            # return model.nncf.get_graph()
         raise nncf.UnsupportedBackendError(
             "Cannot create backend-specific graph because {} is not supported!".format(model_backend.value)
         )
@@ -73,7 +76,8 @@ class ModelTransformerFactory:
 
             return OVModelTransformer(model, inplace=inplace)
         if model_backend == BackendType.TORCH:
-            from nncf.torch.model_transformer import PTModelTransformer
+            # from nncf.torch.model_transformer import PTModelTransformer
+            from nncf.experimental.torch.hook_executor_mode.model_transformer import PTModelTransformer
 
             return PTModelTransformer(model)
         if model_backend == BackendType.TORCH_FX:
@@ -156,7 +160,8 @@ class StatisticsAggregatorFactory:
 
             return OVStatisticsAggregator(dataset)
         if model_backend == BackendType.TORCH:
-            from nncf.torch.statistics.aggregator import PTStatisticsAggregator
+            from nncf.experimental.torch.hook_executor_mode.statistics.aggregator import PTStatisticsAggregator
+            # from nncf.torch.statistics.aggregator import PTStatisticsAggregator
 
             return PTStatisticsAggregator(dataset)
         if model_backend == BackendType.TORCH_FX:
