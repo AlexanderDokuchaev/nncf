@@ -55,6 +55,7 @@ def test_examples(
     ov_version_override: str,
     data: str,
 ):
+    assert False, "ok"
     python_version = sys.version_info
     example_python_version = tuple(example_params.get("python_version", python_version))
     if python_version < example_python_version:
