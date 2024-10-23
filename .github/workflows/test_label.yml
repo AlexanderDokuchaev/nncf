@@ -1,4 +1,4 @@
-name: Set API label
+name: TEST label
 permissions: read-all
 
 on:
