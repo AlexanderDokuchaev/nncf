@@ -2,7 +2,7 @@ name: TEST label
 permissions: read-all
 
 on:
-  pull_request_target:
+  pull_request:
 
 jobs:
   update_labels:
