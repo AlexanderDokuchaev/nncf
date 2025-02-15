@@ -7,7 +7,7 @@ torchvision==0.20.1
 
 # ONNX
 onnx==1.17.0
-onnxruntime==1.19.2
+onnxruntime==1.20.1
 
 # TensorFlow
 tensorflow==2.15.1
