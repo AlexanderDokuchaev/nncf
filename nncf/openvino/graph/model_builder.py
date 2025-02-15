@@ -59,7 +59,7 @@ class OVModelBuilder:
         output_ids: List[Tuple[str, int]],
         node_mapping: Dict[str, ov.Node],
     ) -> List[ov.Node]:
-        """
+        r"""
         A method for aggregating layers to be further cloned.
         Aggregation is designed in such a way that layers are listed from right to left,
         as they pass from bottom to top. This is done in order to find all constants in the model and
@@ -115,7 +115,7 @@ class OVModelBuilder:
         output_ids: List[Tuple[str, int]],
         node_mapping: Dict[str, ov.Node],
     ) -> ov.Model:
-        """
+        r"""
         The basic method of the algorithm. This method uses an aggregated list of layers to be recreated.
         Let us take a graph of this kind as an example:
 
@@ -184,7 +184,6 @@ class OVModelBuilder:
         :param node_mapping: Original nodes mapping.
         :return: Builded ov.Model based on parameters.
         """
-
         parameters, results = [], []
         clone_nodes = deque()
 
