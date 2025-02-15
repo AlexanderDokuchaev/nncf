@@ -10,7 +10,7 @@ onnx==1.17.0
 onnxruntime==1.19.2
 
 # TensorFlow
-tensorflow==2.15.1
+tensorflow==2.18.0
 
 # Tests and examples
 pytest==8.0.2
