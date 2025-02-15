@@ -27,3 +27,8 @@ updates:
     assignees:
       - "AlexanderDokuchaev"
     versioning-strategy: increase-if-necessary
+    ignore:
+      - dependency-name: "*"
+        source: "constraints.txt"
+      - dependency-name: "*"
+        source: "tools/requirements.txt"
