@@ -28,11 +28,13 @@ updates:
       - "AlexanderDokuchaev"
     versioning-strategy: increase-if-necessary
     ignore:
-      - dependency-name: "pytest*"
+      # Frameworks
       - dependency-name: "onnx"
       - dependency-name: "onnxruntime"
       - dependency-name: "openvino"
       - dependency-name: "tensorflow"
       - dependency-name: "torch"
       - dependency-name: "torchvision"
+      # Tests
+      - dependency-name: "pytest*"
 
