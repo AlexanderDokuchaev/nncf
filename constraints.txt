@@ -3,7 +3,7 @@ openvino==2025.0.0
 
 # Pytorch
 torch==2.5.1
-torchvision==0.20.1
+torchvision==0.21.0
 
 # ONNX
 onnx==1.17.0
