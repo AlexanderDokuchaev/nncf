@@ -28,7 +28,11 @@ updates:
       - "AlexanderDokuchaev"
     versioning-strategy: increase-if-necessary
     ignore:
-      - dependency-name: "*"
-        source: "constraints.txt"
-      - dependency-name: "*"
-        source: "tools/requirements.txt"
+      - dependency-name: "pytest*"
+      - dependency-name: "onnx"
+      - dependency-name: "onnxruntime"
+      - dependency-name: "openvino"
+      - dependency-name: "tensorflow"
+      - dependency-name: "torch"
+      - dependency-name: "torchvision"
+
