@@ -4,15 +4,15 @@ version: 2
 updates:
 
   # Github actions
-  - package-ecosystem: github-actions
-    directory: "/"
-    schedule:
-      interval: "daily"
-      time: "23:00"
-      timezone: "Asia/Dubai"
-    assignees:
-      - "AlexanderDokuchaev"
-    open-pull-requests-limit: 3
+  # - package-ecosystem: github-actions
+  #   directory: "/"
+  #   schedule:
+  #     interval: "daily"
+  #     time: "23:00"
+  #     timezone: "Asia/Dubai"
+  #   assignees:
+  #     - "AlexanderDokuchaev"
+  #   open-pull-requests-limit: 3
 
   # python
   - package-ecosystem: pip
@@ -21,7 +21,9 @@ updates:
       interval: "daily"
       time: "23:00"
       timezone: "Asia/Dubai"
-    open-pull-requests-limit: 3
+    allow:
+      - dependency-type: "direct"
+    open-pull-requests-limit: 333
     assignees:
       - "AlexanderDokuchaev"
     versioning-strategy: increase-if-necessary
