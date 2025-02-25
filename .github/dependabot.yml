@@ -19,11 +19,9 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-      time: "23:00"
+      time: "09:00"
       timezone: "Asia/Dubai"
-    allow:
-      - dependency-type: "direct"
-    open-pull-requests-limit: 333
+    open-pull-requests-limit: 3
     assignees:
       - "AlexanderDokuchaev"
     versioning-strategy: increase-if-necessary
@@ -37,4 +35,3 @@ updates:
       - dependency-name: "torchvision"
       # Tests
       - dependency-name: "pytest*"
-
