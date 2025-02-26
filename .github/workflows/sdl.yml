@@ -2,71 +2,45 @@ name: sdl
 permissions: read-all
 
 on:
+  workflow_call:
   workflow_dispatch:
-  push:
-    branches:
-      - develop
-      - release_v*
-  pull_request:
-    paths:
-      - '.github/workflows/sdl.yml'
-      - '**.py'
-
 jobs:
-  bandit:
-    name: Bandit
+  trivy:
+    name: Trivy
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
-        with:
-          python-version: 3.10.14
-      - name: Install bandit
-        run: pip install bandit[toml]==1.7.4
-      - name: Run bandit
-        run: bandit -c pyproject.toml -r .
-
-  codeql:
-    name: CodeQL
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      security-events: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Run trivy
+        uses: aquasecurity/trivy-action@18f2510ee396bbf400402947b394f2dd8c87dbb0 # v0.29.0
         with:
-          lfs: true
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@9e8d0789d4a0fa9ceb6b1738f7e269594bdd67f0 # v3.28.9
-        with:
-          languages: python
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@9e8d0789d4a0fa9ceb6b1738f7e269594bdd67f0 # v3.28.9
-        with:
-          category: "/language:python"
-
-      # pdf reports always empty for pull_request
-      - name: Generate Security Report
-        if: ${{ github.event_name != 'pull_request' }}
-        uses: rsdmike/github-security-report-action@a149b24539044c92786ec39af8ba38c93496495d # v3.0.4
-        with:
-          template: report
-          token: ${{ secrets.GITHUB_TOKEN }}
+          scan-type: "fs"
+          scan-ref: .
+          severity: "CRITICAL,HIGH"
+          scanners: "misconfig,license,vuln"
+          format: template
+          template: "@.github/scripts/trivy_html.tpl"
+          output: trivy_report.html
+          cache: false
+          hide-progress: true
+          exit-code: 1
       - name: Rename Report
+        if: ${{ !cancelled() }}
         shell: bash
-        if: ${{ github.event_name != 'pull_request' }}
         run: |
           DATE=$(date +"%Y-%m-%d")
           REF_NAME="${{ github.ref_name }}"
-          mv "report.pdf" "codeql_nncf_report_${DATE}_${REF_NAME//\//-}_${{ github.sha }}.pdf"
-      - name: Upload CodeQL Artifacts
-        if: ${{ github.event_name != 'pull_request' }}
+          mv "trivy_report.html" "trivy_report_${DATE}_${REF_NAME//\//-}_${{ github.sha }}.html"
+      - name: Upload Scan Results
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 #v4.6.0
         with:
-          name: codeql-scan-results
-          path: "./codeql*.pdf"
+          name: trivy-report
+          path: "./trivy_report*.html"
+          retention-days: 30
+
+  sdl_precommit:
+    permissions:
+      security-events: write
+    uses: ./.github/workflows/sdl_precommit.yml
