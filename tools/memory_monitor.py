@@ -356,7 +356,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--log-dir", type=str, default="memory_logs", help="A directory to save logs at. './memory_logs' by default."
     )
-    parser.add_argument("executable", type=str, nargs="+", help="Target executable to monitor memory for.")
+    parser.add_argument("executable", nargs=argparse.REMAINDER, help="Target executable to monitor memory for.")
     args = parser.parse_args()
 
     memory_monitors = [
