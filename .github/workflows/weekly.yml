@@ -1,5 +1,8 @@
 name: weekly
-permissions: read-all
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
 
 on:
   workflow_dispatch:
