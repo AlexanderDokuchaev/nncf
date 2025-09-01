@@ -62,6 +62,7 @@ from nncf.quantization.advanced_parameters import GroupSizeFallbackMode as Group
 from nncf.quantization.advanced_parameters import OverflowFix as OverflowFix
 from nncf.scopes import IgnoredScope as IgnoredScope
 from nncf.scopes import Subgraph as Subgraph
+from nncf.sparsity.sparsity_model import sparsity as sparsity
 from nncf.version import __version__ as __version__
 
 _SUPPORTED_FRAMEWORKS = ["torch", "tensorflow", "onnx", "openvino"]

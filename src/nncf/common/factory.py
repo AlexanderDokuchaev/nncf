@@ -27,7 +27,7 @@ TModel = TypeVar("TModel")
 
 class NNCFGraphFactory:
     @staticmethod
-    def create(model: TModel) -> NNCFGraph:
+    def create(model: TModel, example_input: Any = None) -> NNCFGraph:
         """
         Factory method to create backend-specific NNCFGraph instance based on the input model.
 
@@ -54,13 +54,21 @@ class NNCFGraphFactory:
 
             return FXGraphConverter.create_nncf_graph(cast(GraphModule, model))
         if model_backend == BackendType.TORCH:
+            from torch import nn
+
             from nncf.torch.function_hook.nncf_graph.nncf_graph_builder import GraphModelWrapper
+            from nncf.torch.function_hook.nncf_graph.nncf_graph_builder import build_nncf_graph
             from nncf.torch.nncf_network import NNCFNetwork
 
             if isinstance(model, GraphModelWrapper):
                 return model.get_graph()
             if isinstance(model, NNCFNetwork):
                 return model.nncf.get_graph()
+            if isinstance(model, nn.Module):
+                if example_input is None:
+                    msg = "To build graph for native pytorch model, please use `example_input` argument"
+                    raise nncf.InternalError(msg)
+                return build_nncf_graph(model, example_input)
             msg = f"Unexpected type of model {type(model)} for TORCH backend"
             raise nncf.InternalError(msg)
         msg = f"Cannot create backend-specific graph because {model_backend.value} is not supported!"
