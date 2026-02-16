@@ -312,3 +312,26 @@ def get_tensor_backend(backend: BackendType) -> TensorBackend:
         raise nncf.ValidationError(msg)
 
     return BACKEND_TO_TENSOR_BACKEND[backend]
+
+
+def wrap_tensor(data: Tensor) -> Tensor:
+    """
+    Wrap input data into a Tensor object.
+
+    Parameters
+    ----------
+    data : Tensor
+        Input data to be wrapped. Can be either a Tensor instance or data that
+        can be used to construct a Tensor.
+
+    Returns
+    -------
+    Tensor
+        If input is already a Tensor, returns it unchanged. Otherwise, returns
+        a new Tensor instance created from the input data.
+    """
+    import copy
+
+    if isinstance(data, Tensor):
+        return data
+    return Tensor(copy.deepcopy(data))
