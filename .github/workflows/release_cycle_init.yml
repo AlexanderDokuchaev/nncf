@@ -116,6 +116,12 @@ jobs:
             ### Reason for changes
 
             Prepare NNCF for the next release cycle.
+
+            ### Related tickets
+
+            TBD
+
+            ### Tests
             "
 
             gh pr create \
@@ -221,9 +227,11 @@ jobs:
 
         Upcoming release ${{ env.RELEASE_VERSION }}
 
-        ### Related issues
+        ### Related tickets
 
         TBD
+
+        ### Tests
         "
 
         gh pr create \
