@@ -1,0 +1,89 @@
+name: Init Release Cycle
+
+on:
+  workflow_dispatch:
+    inputs:
+      next_version:
+        description: 'Next development version (e.g., 3.1.0)'
+        required: true
+        type: string
+      openvino_version:
+        description: 'Next OpenVINO version (e.g., 2026.1.0.rc1)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  init-release:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout develop branch
+        uses: actions/checkout@v4
+        with:
+            ref: develop
+            token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate version format
+        run: |
+          if ! [[ "${{ github.event.inputs.next_version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "❌ Next version must be in format X.Y.Z"
+              exit 1
+          fi
+
+      - name: Read current version
+        id: read_version
+        run: |
+          RELEASE_VERSION=$(grep '__version__' src/nncf/version.py | sed 's/.*"\([^"]*\)".*/\1/')
+          echo "Current version: ${RELEASE_VERSION}"
+
+      - name: Create release branch
+        run: |
+          CLEAN_VERSION=$(echo "${{ env.RELEASE_VERSION }}" | tr -d '.')
+          RELEASE_BRANCH="release_v${CLEAN_VERSION}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git checkout -b "$RELEASE_BRANCH"
+          git push origin "$RELEASE_BRANCH"
+
+      - name: Create version bump branch
+        run: |
+            NEXT_VERSION="${{ github.event.inputs.next_version }}"
+            BUMP_BRANCH="bump_version_to_${NEXT_VERSION}"
+
+            git checkout develop
+            git checkout -b "${BUMP_BRANCH}"
+
+            sed -i "s/__version__ = ['\"].*['\"]*/__version__ = \"${NEXT_VERSION}\"/" src/nncf/version.py
+
+            git add src/nncf/version.py
+            git commit -m "Bump version to ${NEXT_VERSION}"
+            git push origin "${BUMP_BRANCH}"
+
+            PR_BODY="### Changes
+
+            Updated version in src/nncf/version.py to $NEXT_VERSION.
+
+            ### Reason for changes
+
+            Prepare NNCF for the next release cycle.
+
+            ### Tests
+
+            N/A
+            "
+
+            gh pr create \
+                --base develop \
+                --head "${{ env.BUMP_BRANCH }}" \
+                --title "Bump version to ${NEXT_VERSION}" \
+                --body "${PR_BODY}"
+
+
