@@ -55,6 +55,8 @@ jobs:
           git push origin "$RELEASE_BRANCH"
 
       - name: Create version bump branch
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
             NEXT_VERSION="${{ github.event.inputs.next_version }}"
             BUMP_BRANCH="bump_version_to_${NEXT_VERSION}"
