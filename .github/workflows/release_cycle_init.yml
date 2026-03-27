@@ -24,7 +24,7 @@ jobs:
         shell: bash
     steps:
       - name: Checkout develop branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
             ref: develop
             token: ${{ secrets.GITHUB_TOKEN }}
