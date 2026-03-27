@@ -93,7 +93,8 @@ jobs:
         run: |
             set -x
             NEXT_VERSION="${{ inputs.next_version }}"
-            BUMP_BRANCH="bump_nncf_version_to_${NEXT_VERSION}"
+            NO_DOT_VERSION=$(echo "${NEXT_VERSION}" | tr -d '.')
+            BUMP_BRANCH="bump_nncf_version_to_${NO_DOT_VERSION}"
 
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
