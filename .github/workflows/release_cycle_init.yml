@@ -119,10 +119,6 @@ jobs:
             ### Reason for changes
 
             Prepare NNCF for the next release cycle.
-
-            ### Tests
-
-            N/A
             "
 
             gh pr create \
@@ -130,3 +126,63 @@ jobs:
                 --head "${BUMP_BRANCH}" \
                 --title "${PR_TITLE}" \
                 --body "${PR_BODY}"
+
+  release_notes:
+    name: "Release Notes"
+    runs-on: ubuntu-latest
+    needs: [release_branch]
+    defaults:
+      run:
+        shell: bash
+    steps:
+    - name: Download release artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: release-info
+
+    - name: Load release variables
+      run: |
+        set -x
+        cat release_artifacts.txt >> "${GITHUB_ENV}"
+
+    - name: Checkout develop branch
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      with:
+          ref: ${{ env.RELEASE_BRANCH }}
+
+    - name: Create release notes
+      run: |
+        set -x
+        git checkout -b release_notes
+
+        NO_DOT_VERSION=$(echo "${{ env.RELEASE_VERSION }}" | tr -d '.')
+        BRANCH_NAME="r${NO_DOT_VERSION}/release_notes"
+
+        head -n 2 ReleaseNotes.md > tmp.md
+        cat .github/scripts/release_notes_template.txt >> tmp.md
+        sed -i "s/TBD_VERSION/${{ env.RELEASE_VERSION }}/g" tmp.md
+        tail -n +2 ReleaseNotes.md >> tmp.md
+        mv tmp.md ReleaseNotes.md
+
+        git add ReleaseNotes.md
+        git commit -m "Add release notes for v${{ env.RELEASE_VERSION }}"
+        git push origin "${BRANCH_NAME}"
+
+        PR_BODY="### Changes
+
+        Add release notes for v${{ env.RELEASE_VERSION }}.
+
+        ### Reason for changes
+
+        Upcoming release ${{ env.RELEASE_VERSION }}
+
+        ### Release Notes
+
+        TBD
+        "
+
+        gh pr create \
+          --base ${{ env.RELEASE_BRANCH }} \
+          --head "${BRANCH_NAME}" \
+          --title "Release notes for v${{ env.RELEASE_VERSION }}" \
+          --body "${PR_BODY}"
