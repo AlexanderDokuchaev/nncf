@@ -17,8 +17,8 @@ permissions:
   pull-requests: write
 
 jobs:
-  create_release_branches:
-    name: "Create Release Branches"
+  release_branch:
+    name: "Release Branch"
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -54,8 +54,8 @@ jobs:
           git checkout -b "$RELEASE_BRANCH"
           git push origin "$RELEASE_BRANCH"
 
-  create_pr_for_version_bump:
-    name: "Create PR for NNCF version Bump"
+  bump_nncf_version:
+    name: "Bump NNCF version"
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -80,7 +80,7 @@ jobs:
         run: |
             set -x
             NEXT_VERSION="${{ github.event.inputs.next_version }}"
-            BUMP_BRANCH="bump_version_to_${NEXT_VERSION}"
+            BUMP_BRANCH="bump_nncf_version_to_${NEXT_VERSION}"
 
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -94,7 +94,7 @@ jobs:
             git commit -m "Bump version to ${NEXT_VERSION}"
             git push origin "${BUMP_BRANCH}"
 
-            PR_TITLE="Bump version to ${NEXT_VERSION}"
+            PR_TITLE="Bump NNCF version to ${NEXT_VERSION}"
             PR_BODY="### Changes
 
             Updated version in src/nncf/version.py to $NEXT_VERSION.
