@@ -3,6 +3,10 @@ name: Init Release Cycle
 on:
   workflow_dispatch:
     inputs:
+      version:
+        description: 'Next development version (e.g., 3.0.0)'
+        required: true
+        type: string
       next_version:
         description: 'Next development version (e.g., 3.1.0)'
         required: true
@@ -42,6 +46,7 @@ jobs:
           set -x
           NO_DOT_VERSION=$(echo "${{ env.RELEASE_VERSION }}" | tr -d '.')
           RELEASE_BRANCH="release_v${NO_DOT_VERSION}"
+          echo "RELEASE_BRANCH=${RELEASE_BRANCH}" >> "${GITHUB_ENV}"
 
           if git ls-remote --heads origin "$RELEASE_BRANCH" | grep -q "$RELEASE_BRANCH"; then
               echo "❌ Release branch $RELEASE_BRANCH already exists."
@@ -53,6 +58,18 @@ jobs:
 
           git checkout -b "$RELEASE_BRANCH"
           git push origin "$RELEASE_BRANCH"
+
+      - name: Save release artifacts
+        run: |
+          set -x
+          echo "RELEASE_BRANCH=${{ env.RELEASE_BRANCH }}" > release_artifacts.txt
+          echo "RELEASE_VERSION=${{ env.RELEASE_VERSION }}" >> release_artifacts.txt
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-info
+          path: release_artifacts.txt
 
   bump_nncf_version:
     name: "Bump NNCF version"
@@ -69,8 +86,8 @@ jobs:
       - name: Validate version format
         run: |
           set -x
-          if ! [[ "${{ inputs.next_version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-              echo "❌ Next version must be in format X.Y.Z"
+          if ! [[ "${{ inputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "❌ Version must be in format X.Y.Z"
               exit 1
           fi
 
@@ -113,5 +130,3 @@ jobs:
                 --head "${BUMP_BRANCH}" \
                 --title "${PR_TITLE}" \
                 --body "${PR_BODY}"
-
-
