@@ -82,6 +82,9 @@ jobs:
             NEXT_VERSION="${{ github.event.inputs.next_version }}"
             BUMP_BRANCH="bump_version_to_${NEXT_VERSION}"
 
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+
             git checkout develop
             git checkout -b "${BUMP_BRANCH}"
 
@@ -91,6 +94,7 @@ jobs:
             git commit -m "Bump version to ${NEXT_VERSION}"
             git push origin "${BUMP_BRANCH}"
 
+            PR_TITLE="Bump version to ${NEXT_VERSION}"
             PR_BODY="### Changes
 
             Updated version in src/nncf/version.py to $NEXT_VERSION.
@@ -107,7 +111,7 @@ jobs:
             gh pr create \
                 --base develop \
                 --head "${BUMP_BRANCH}" \
-                --title "Bump version to ${NEXT_VERSION}" \
+                --title "${PR_TITLE}" \
                 --body "${PR_BODY}"
 
 
