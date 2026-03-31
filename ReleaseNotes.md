@@ -5,24 +5,35 @@
 Post-training Quantization:
 
 - Breaking changes:
-  - (OpenVINO) Removed deprecated `INT8` mode from weight compression. Please use `INT8_ASYM` or `INT8_SYM` instead. (#4008)
+  - (Weight Compression) Removed the deprecated `int8` mode. Use `nncf.CompressWeightsMode.INT8_SYM` or `nncf.CompressWeightsMode.INT8_ASYM` instead. (#4008)
 - Features:
-  - (OpenVINO) Added NVFP4 support for weight compression. (#3967)
+  - (OpenVINO) Added support for the NVFP4 compression data type in Weight Compression, enabling INT4-equivalent quantization using NVIDIA's FP4 format. (#3967)
+  - Added `backup_mode` parameter to `nncf.compress_weights()` for FP compression formats, allowing users to specify a fallback compression mode for layers that cannot be compressed with the primary mode. (#3886)
+  - Added a [GPTQModel convertor](tools/) tool that converts GPTQ-compressed models to NNCF format. (#3848)
 - Fixes:
-  - (OpenVINO) Fixed incorrect RoPe ignored pattern when `transpose` is absent. (#3989)
-  - (OpenVINO, ONNX) Fixed `do_float_quantization` usage in weight compression. (#3991)
-  - (ONNX) Fixed `nncf.errors.ValidationError: There is no tensor with the name` error. (#3988)
+  - (Weight Compression) Fixed wrong usage of `do_float_quantization` that could lead to incorrect compression results. (#3991)
+  - (ONNX) Fixed `nncf.errors.ValidationError: There is no tensor with the name` error during model graph building. (#3988)
+  - (OpenVINO) Fixed RoPe ignored pattern detection for cases where the transpose operation is absent. (#3989)
+  - (ONNX) Fixed incorrect insertion of MatMulNBits nodes. (#3889)
+  - Fixed scale estimation for adaptive codebook compression. (#3888)
 - Improvements:
-  - Migrated `NNCFGraph` from `nx.DiGraph` to `nx.MultiDiGraph` to better support models with multiple edges between nodes. (#3843)
+  - (PyTorch) Migrated from `torch.ao` to `torchao` for TorchAO backend integration. (#3854)
+  - Migrated `NNCFGraph` internal representation from `nx.DiGraph` to `nx.MultiDiGraph`, enabling correct handling of graphs with multiple edges between the same pair of nodes. (#3843)
   - Removed redundant `get_raw_statistic_collector` backend methods. (#3979)
-  - (PyTorch) Migrated from `torch.ao` to `torchao` package. (#3854)
+  - Added lazy import for `nncf.torch` to reduce startup time when the torch backend is not used. (#3862)
+  - (PyTorch) Added `TopKMetatype` support for graph building. (#3944)
+
+Deprecations/Removals:
+
+- (Weight Compression) Removed the deprecated `nncf.CompressWeightsMode.INT8` mode.
 
 Requirements:
 
 - Updated PyTorch to 2.10.0. (#3852)
 - Updated `onnxruntime` from 1.21.1 to 1.24.3. (#3977)
 - Updated `onnx` from 1.17.0 to 1.20.1. (#3966)
-- Moved `pandas` to optional dependency. (#3970)
+- Moved `pandas` to an optional dependency. (#3970)
+- Removed unused `pillow` dependency from requirements files. (#3929)
 
 ## New in Release 3.0.0
 
