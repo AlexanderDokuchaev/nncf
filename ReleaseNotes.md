@@ -1,5 +1,36 @@
 # Release Notes
 
+## New in Release 3.1.0
+
+Post-training Quantization:
+
+- Features:
+  - (OpenVINO) Added support for `NVFP4` compression data type in weight compression. (#3967)
+  - Added `backup_mode` parameter for FP compression formats to control fallback behavior when the primary compression type cannot be applied. (#3886)
+  - Added experimental GPTQModel converter to facilitate loading GPTQ pre-quantized models. (#3848)
+- Fixes:
+  - Fixed wrong usage of `do_float_quantization` in weight compression. (#3991)
+  - (ONNX) Fixed `nncf.errors.ValidationError` that occurred when a tensor name was missing in the graph. (#3988)
+  - (OpenVINO) Fixed RoPE ignored pattern matching for models without a transpose operation. (#3989)
+  - Fixed scale estimation for adaptive codebook compression. (#3888)
+- Improvements:
+  - Migrated internal `NNCFGraph` from `nx.DiGraph` to `nx.MultiDiGraph` to properly support models with parallel edges between nodes. (#3843)
+  - (PyTorch) Added `TopKMetatype` for graph representation of TopK operations. (#3944)
+  - (TorchAO) Migrated from `torch.ao` to the standalone `torchao` package. (#3854)
+  - Implemented lazy import for `nncf.torch` to reduce import time and avoid unnecessary dependencies at import. (#3862)
+  - Removed redundant `get_raw_statistic_collector` backend methods. (#3979)
+  - Reorganized tools directory structure for improved discoverability. (#3939)
+
+Requirements:
+
+- Updated PyTorch to 2.10.0. (#3852)
+- Updated OpenVINO to 2026.1.0. (#4005)
+- Updated `onnxruntime` from 1.21.1 to 1.24.3. (#3977)
+- Updated `onnx` from 1.17.0 to 1.20.1. (#3966)
+- Updated `onnx-ir` to 0.1.15. (#3914)
+- Moved `pandas` to optional dependencies. (#3970)
+- Removed unused `pillow` dependency. (#3929)
+
 ## New in Release 3.0.0
 
 Post-training Quantization:
