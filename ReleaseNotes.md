@@ -1,5 +1,29 @@
 # Release Notes
 
+## New in Release 3.1.0
+
+Post-training Quantization:
+
+- Breaking changes:
+  - (OpenVINO) Removed deprecated `INT8` mode from weight compression. Please use `INT8_ASYM` or `INT8_SYM` instead. (#4008)
+- Features:
+  - (OpenVINO) Added NVFP4 support for weight compression. (#3967)
+- Fixes:
+  - (OpenVINO) Fixed incorrect RoPe ignored pattern when `transpose` is absent. (#3989)
+  - (OpenVINO, ONNX) Fixed `do_float_quantization` usage in weight compression. (#3991)
+  - (ONNX) Fixed `nncf.errors.ValidationError: There is no tensor with the name` error. (#3988)
+- Improvements:
+  - Migrated `NNCFGraph` from `nx.DiGraph` to `nx.MultiDiGraph` to better support models with multiple edges between nodes. (#3843)
+  - Removed redundant `get_raw_statistic_collector` backend methods. (#3979)
+  - (PyTorch) Migrated from `torch.ao` to `torchao` package. (#3854)
+
+Requirements:
+
+- Updated PyTorch to 2.10.0. (#3852)
+- Updated `onnxruntime` from 1.21.1 to 1.24.3. (#3977)
+- Updated `onnx` from 1.17.0 to 1.20.1. (#3966)
+- Moved `pandas` to optional dependency. (#3970)
+
 ## New in Release 3.0.0
 
 Post-training Quantization:
