@@ -12,8 +12,8 @@ PREV=$(sed -n '2p' branches_tmp.txt)
 echo "Comparing $PREV to $LAST..."
 
 # 3. Generate the log and filter out dependabot in one pipeline
-git log "$PREV..$LAST" --pretty=format:"%an;%h;%s" | grep -v "dependabot" > commits.txt
+git log "$PREV..$LAST" --pretty=format:"%an;%h;%s" | grep -v "dependabot" > tmp_release_commits.txt
 
 rm branches_tmp.txt
 
-cat commits.txt
+cat tmp_release_commits.txt
