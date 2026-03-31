@@ -1,5 +1,37 @@
 # Release Notes
 
+## New in Release 3.1.0
+
+Post-training Quantization:
+
+- Breaking changes:
+  - Removed deprecated `INT8` mode from Weight Compression (`nncf.CompressWeightsMode.INT8`). (#4008)
+- Features:
+  - (OpenVINO) Added NVFP4 data type support in Weight Compression. (#3967)
+  - Added `backup_mode` parameter for FP compression formats, allowing fallback to a secondary compression format when the primary is not applicable. (#3886)
+  - Added experimental GPTQModel convertor tool for exporting NNCF-compressed models to GPTQModel format. (#3848)
+  - (OpenVINO) Added ignored pattern for RoPE layers without a transpose operation, improving compatibility with more LLM architectures. (#3989)
+- Fixes:
+  - Fixed incorrect usage of `do_float_quantization` flag in Weight Compression that could lead to unintended quantization behavior. (#3991)
+  - (ONNX) Fixed `nncf.errors.ValidationError: There is no tensor with the name` error occurring during ONNX model processing. (#3988)
+  - (ONNX) Fixed incorrect insertion of `MatMulNBits` nodes during ONNX weight compression. (#3889)
+  - (ONNX) Fixed issue where names of removed initializers were not removed from graph inputs. (#3885)
+  - Fixed scale estimation for the adaptive codebook compression type. (#3888)
+- Improvements:
+  - Migrated `NNCFGraph` internal representation from `nx.DiGraph` to `nx.MultiDiGraph`, enabling proper handling of models with multiple edges between the same nodes. (#3843)
+  - (PyTorch) Added `TopKMetatype` support for better graph analysis of models using TopK operations. (#3944)
+  - (PyTorch) Added lazy import for `nncf.torch` module to reduce overall NNCF import time. (#3862)
+  - (PyTorch) Migrated from deprecated `torch.ao` namespace to `torchao` package. (#3854)
+  - Removed redundant `get_raw_statistic_collector` methods from backend implementations. (#3979)
+
+Requirements:
+
+- Updated PyTorch to 2.10.0 and Torchvision accordingly. (#3852)
+- Updated onnxruntime from 1.21.1 to 1.24.3. (#3977)
+- Updated onnx from 1.17.0 to 1.20.1. (#3966)
+- Updated onnx-ir to 0.1.15. (#3914)
+- Moved `pandas` to optional dependency (only required for specific tools). (#3970)
+
 ## New in Release 3.0.0
 
 Post-training Quantization:
