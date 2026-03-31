@@ -74,6 +74,7 @@ cmap
 cnode
 codeofconduct
 coeffs
+committerdate
 concr
 confs
 conftest
