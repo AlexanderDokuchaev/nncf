@@ -1,5 +1,35 @@
 # Release Notes
 
+## New in Release 3.1.0
+
+Post-training Quantization:
+
+- Breaking changes:
+  - Removed deprecated `nncf.CompressWeightsMode.INT8` mode option. Use `nncf.CompressWeightsMode.INT8_SYM` or `nncf.CompressWeightsMode.INT8_ASYM` instead. (#4008)
+- Features:
+  - (OpenVINO) Introduced NVFP4 data type (`nncf.CompressWeightsMode.NVFP4`): a 4-bit floating-point format (f4e2m1) for weight compression with a fixed group size of 16, using f8e4m3 scales with a per-tensor second-degree scale factor. NVFP4 offers higher compression ratio compared to INT4, with hardware-friendly data layout. (#3967)
+  - Added `backup_mode` parameter for FP weight compression formats to control the precision used for sensitive layers (e.g., embeddings, convolutions, and the last linear layer). The default backup precision is MXFP8 for MXFP4/MXFP8 primary modes, and FP8 for FP4/FP8 primary modes. (#3886)
+- Fixes:
+  - Fixed incorrect usage of `do_float_quantization` in weight compression. (#3991)
+  - (OpenVINO) Fixed the RoPe ignored pattern to handle models without a preceding Transpose operation. (#3989)
+  - Fixed scale estimation for the adaptive codebook compression mode. (#3888)
+  - (ONNX) Fixed a `ValidationError: There is no tensor with the name` error that occurred during ONNX model quantization. (#3988)
+  - (ONNX) Fixed incorrect insertion of MatMulNBits nodes. (#3889)
+- Improvements:
+  - Added an experimental [GPTQModel converter](https://github.com/openvinotoolkit/nncf/tree/develop/src/nncf/experimental/torch/gptqmodel) module and a corresponding [example](https://github.com/openvinotoolkit/nncf/tree/develop/examples/llm_compression/torch/gptq_model_convertor) to convert NNCF-quantized linear modules to the GPTQModel format. Currently supports Triton kernels only. (#3848)
+
+General:
+
+- Improvements:
+  - `NNCFGraph`, `InsertionPointGraph`, and `PatternMatchingGraph` now use `nx.MultiDiGraph` instead of `nx.DiGraph`, enabling support for multiple parallel edges between graph nodes. (#3843)
+  - (PyTorch) Added `TopKMetatype` for `torch.topk` operator. (#3944)
+  - (TorchAO) Migrated from the legacy `torch.ao` module to the standalone `torchao` package. (#3854)
+  - Moved `pandas` to optional dependencies to reduce the default installation footprint. (#3970)
+
+Requirements:
+
+- Updated PyTorch to 2.10.0 and Torchvision to 0.25.0. (#3852)
+
 ## New in Release 3.0.0
 
 Post-training Quantization:
