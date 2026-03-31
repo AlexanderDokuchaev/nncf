@@ -1,5 +1,40 @@
 # Release Notes
 
+## New in Release 3.1.0
+
+Post-training Quantization:
+
+- Breaking changes:
+  - Removed deprecated `INT8` mode in `nncf.CompressWeightsMode`. Use `INT8_ASYM` or `INT8_SYM` instead. (#4008)
+- Features:
+  - (OpenVINO) Introduced `NVFP4` compression data type for weight compression: f4e2m1 weight precision with fixed group size 16 and f8e4m3 scale. (#3967)
+  - Added `backup_mode` parameter for FP compression formats (`MXFP4`, `MXFP8`, `FP4`, `FP8`) to control fallback compression for layers that do not support the primary format, enabling fully FP-quantized models without mixed INT8 layers. (#3886)
+  - Added experimental GPTQModel format converter tool for exporting NNCF-compressed PyTorch models to GPTQModel format with Triton kernel support. (#3848)
+  - (PyTorch) Migrated weight compression from `torch.ao` to the `torchao` package. (#3854)
+- Fixes:
+  - Fixed incorrect handling of `do_float_quantization` flag in Weight Compression leading to wrong quantization behavior. (#3991)
+  - (ONNX) Fixed `nncf.errors.ValidationError` raised when a tensor name referenced in the model graph is missing during export. (#3988)
+  - Fixed Scale Estimation algorithm for Adaptive Codebook compression data type. (#3888)
+- Improvements:
+  - Migrated `NNCFGraph`, `InsertionPointGraph`, and `PatternMatchingGraph` from `nx.DiGraph` to `nx.MultiDiGraph` to enable correct representation and compression of models with multi-edges (e.g., RoPE, SDPA patterns). (#3843)
+  - (OpenVINO) Extended RoPE ignored pattern to support model architectures without transpose operations. (#3989)
+  - Added lazy import of `nncf.torch` submodule in the top-level `nncf` package so that `nncf.torch.*` is accessible without an explicit `import nncf.torch`. (#3862)
+  - (PyTorch) Added `TopK` metatype. (#3944)
+  - Reorganized `tools/` directory structure for better discoverability. (#3939)
+  - Removed redundant `get_raw_statistic_collector` backend methods. (#3979)
+
+Deprecations/Removals:
+
+- Removed out-of-date notebook tutorials.
+
+Requirements:
+
+- Updated PyTorch (2.10.0) and Torchvision versions. (#3852)
+- Moved `pandas` to an optional dependency. (#3970)
+- Dropped unused `pillow` dependency from all requirements files. (#3929)
+- Updated `onnx` from 1.17.0 to 1.20.1. (#3966)
+- Updated `onnxruntime` from 1.21.1 to 1.24.3. (#3977)
+
 ## New in Release 3.0.0
 
 Post-training Quantization:
