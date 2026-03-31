@@ -1,5 +1,12 @@
 # Release Notes
 
+## New in Release 3.1.0
+
+Post-training Quantization:
+
+- Deprecations/Removals:
+  - Removed deprecated `nncf.CompressWeightsMode.INT8` mode option. Use `nncf.CompressWeightsMode.INT8_ASYM` or `nncf.CompressWeightsMode.INT8_SYM` instead. (#4008)
+
 ## New in Release 3.0.0
 
 Post-training Quantization:
