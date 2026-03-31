@@ -1,5 +1,60 @@
 # Release Notes
 
+## New in Release 3.1.0
+
+Post-training Quantization:
+
+- Breaking changes:
+  - Removed the deprecated `int8` mode parameter from `nncf.compress_weights()` (#4008).
+- Features:
+  - (OpenVINO) Introduced NVFP4 compression data type: `f4e2m1` weights with scale compressed to `f8e4m3` using double-degree scaling (#3967).
+  - Added `backup_mode` parameter for FP compression formats (MXFP4, MXFP8, FP4, FP8) to allow using an FP-format backup for first and last layers (#3886).
+  - Added `transpose_a` support in Weight Compression, Mixed Precision, and AWQ algorithms, enabling compression of Mamba-family models (#3794).
+  - (OpenVINO) Added `nncf.definitions.NNCF_DATASET_RESET_STATE_KEY` constant to control resetting of stateful model state during calibration, improving quantization quality for models such as Whisper (#3714).
+  - (ONNX) Added support for `MatMul` layers in Fast Bias Correction and Bias Correction algorithms (#3657).
+  - (ONNX) Added `axes` and `axes_mode` parameters to SmoothQuant for flexible quantization axis configuration (#3687).
+  - Added element-wise sign operation support in NNCF tensor functions (#3824).
+  - (PyTorch) Added experimental GPTQModel convertor to transform NNCF-compressed models to GPTQModel format (#3848).
+- Fixes:
+  - (OpenVINO) Fixed RoPe ignored pattern matching for models without transpose operation (#3989).
+  - Fixed incorrect usage of `do_float_quantization` flag in weight compression (#3991).
+  - (ONNX) Fixed `ValidationError: There is no tensor with the name` during weight compression (#3988).
+  - (OpenVINO) Fixed method to retrieve WC config from `OVQuantizer` in OpenVINO Adapter (#3782).
+  - Fixed Attention and SDPA quantization handling for ONNX and PyTorch backends (#3751).
+  - Fixed statistics processing for data-aware weight compression methods (#3752).
+  - (TorchFX) Fixed `None` tensor shape in NNCFGraph edges (#3747).
+  - (OpenVINO) Fixed optimized weight compression on ARM processors (#3743).
+  - Fixed compression of first and last layers of BitNet model to INT8 (#3738).
+  - Fixed scale estimation for adaptive codebook compression (#3888).
+  - Added ignored pattern for Positional Embedding in Segment Anything model (#3700).
+  - Fixed processing of named tuples in PyTorch model tracing (#3712).
+- Improvements:
+  - (OpenVINO) Optimized computation for HAWQ mixed precision algorithm (#3762).
+  - (OpenVINO) Optimized weight compression for FP4 mode (#3737).
+  - Optimized weight compression for FP8 modes (#3748).
+  - Reduced peak memory usage during Scale Estimation algorithm (#3772).
+  - Improved `nncf.torch` import speed with lazy imports (#3862).
+  - (PyTorch) Added fast path for wrapped models without active hooks (#3800).
+  - (PyTorch) Added in-place strip support for `WeightDecompressor` classes (#3709).
+  - Moved `pandas` to optional dependency (#3970).
+  - Unified `strip_in_place` functions across backends (#3732).
+
+Compression-aware training:
+
+- Features:
+  - (PyTorch) Added `nncf.batch_norm_adaptation` function for BatchNorm adaptation after pruning (#3726).
+  - (PyTorch) Added support for post-training quantization after pruning (#3811).
+- Improvements:
+  - (PyTorch) Added pruning statistics collection and display (#3717).
+  - (PyTorch) Added `nncf.strip` support for pruned models (#3716).
+
+Requirements:
+
+- Updated PyTorch to 2.10.0 and Torchvision to 0.25.0 (#3852).
+- Updated `onnxruntime` from 1.21.1 to 1.24.3 (#3977).
+- Updated `onnx` from 1.17.0 to 1.20.1 (#3966).
+- (TorchAO) Migrated from `torch.ao` to the standalone `torchao` package (#3854).
+
 ## New in Release 3.0.0
 
 Post-training Quantization:
