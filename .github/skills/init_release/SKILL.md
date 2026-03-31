@@ -73,8 +73,10 @@ set -euxo pipefail
 git checkout ${RELEASE_BRANCH}
 git pull origin ${RELEASE_BRANCH}
 
-PREV_RELEASE_BRANCH=$(git for-each-ref --sort=-committerdate --format="%(refname:short)" refs/remotes/origin/release_v* | sed -n '2p')
-git fetch origin ${PREV_RELEASE_BRANCH}:${PREV_RELEASE_BRANCH}
+PREV_RELEASE_BRANCH=$(git for-each-ref --sort=-committerdate --format="%(refname:short)" refs/remotes/origin/release_v* | sed -n '2p' | sed 's|origin/||')
+git fetch origin ${PREV_RELEASE_BRANCH}:refs/remotes/origin/${PREV_RELEASE_BRANCH}
+
+PREV_RELEASE_BRANCH_HASH=$(git rev-parse origin/${PREV_RELEASE_BRANCH})
 
 git log ${PREV_RELEASE_BRANCH_HASH}..${RELEASE_BRANCH} --pretty=format:"%an;%s" > commits.txt
 grep -v "dependabot" commits.txt > filtered_commits.txt
