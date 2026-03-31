@@ -1,5 +1,43 @@
 # Release Notes
 
+## New in Release 3.1.0
+
+Post-training Quantization:
+
+- Features:
+  - (OpenVINO) Added NVFP4 weight compression support: `f4e2m1` weights with constant group size 16, where the scale is compressed to `f8e4m3` using a single fp32 second-degree scale. (#3967)
+  - Added `backup_mode` parameter for FP compression formats (MXFP4, MXFP8, FP4, FP8), enabling fallback compression of first/last layers to an FP format instead of INT8 to avoid mixing compression types. (#3886)
+  - Added GPTQModel converter tool to convert NNCF-compressed linear modules to GPTQModel format (currently supports the Triton kernel). See [example](examples/llm_compression/torch/gptq_model_convertor/README.md). (#3848)
+- Fixes:
+  - (OpenVINO) Fixed incorrect detection of the RoPe ignored pattern when the transpose operation is absent. (#3989)
+  - Fixed wrong usage of `do_float_quantization` in weight compression algorithms. (#3991)
+  - Fixed scale estimation for adaptive codebook compression. (#3888)
+  - (ONNX) Fixed `nncf.errors.ValidationError` raised when a tensor name is not found in the graph. (#3988)
+  - (ONNX) Fixed incorrect insertion of `MatMulNBits` nodes. (#3889)
+  - (ONNX) Fixed an issue where names of removed initializers remained in graph inputs. (#3885)
+- Improvements:
+  - Migrated `NNCFGraph`, `InsertionPointGraph`, and `PatternMatchingGraph` from `nx.DiGraph` to `nx.MultiDiGraph`, enabling correct representation and compression of models with parallel edges (e.g., YOLO26 SDPA, RoPE patterns). (#3843)
+  - (PyTorch) Added `TopKMetatype` support for the TopK operation. (#3944)
+
+General:
+
+- (TorchAO) Migrated weight compression integration from the deprecated `torch.ao` module to the standalone `torchao` package. (#3854)
+- Added lazy import for `nncf.torch` in `nncf/__init__.py`, allowing `nncf.torch.load_from_config` to be accessed without explicitly importing `nncf.torch`. (#3862)
+- Reorganized the `tools` directory structure for better discoverability. (#3939)
+- Added Microsoft Olive to the [Integrations](README.md) section. (#3998)
+
+Deprecations/Removals:
+
+- Removed the deprecated `CompressWeightsMode.INT8` mode. Use `CompressWeightsMode.INT8_ASYM` or `CompressWeightsMode.INT8_SYM` as a replacement. (#4008)
+
+Requirements:
+
+- Updated PyTorch to 2.10.0 and torchao to 0.16.0. (#3852)
+- Updated onnxruntime from 1.21.1 to 1.24.3. (#3977)
+- Updated onnx from 1.17.0 to 1.20.1. (#3966)
+- Moved `pandas` to an optional dependency. (#3970)
+- Removed unused `pillow` dependency. (#3929)
+
 ## New in Release 3.0.0
 
 Post-training Quantization:
