@@ -21,10 +21,12 @@ description: Generate release notes for the new NNCF release.
 2. **Read**: Open the generated `tmp_release_commits.txt` in format `Author;CommitHash;CommitMessage`.
 3. **Read**: Read the current version of NNCF from `src/nncf/version.py` to determine the new version number for the release notes.
 4. **Updater**: Update `ReleaseNotes.md` with the new release notes based on the collected commits in `tmp_release_commits.txt`.
-The release notes should be formatted in a clear and concise manner, using formats from the previous releases as a reference.
-Add a link to the pull request for each change in the end of line in the format `(#PR_NUMBER)`.
-For example, if the commit message is "Fix bug in NNCF (#123)", the release notes should include "Fix bug in NNCF (#123)".
+- The release notes should be formatted in a clear and concise manner, using formats from the previous releases as a reference.
+- Each change should be categorized based on the backend (e.g., OpenVINO, PyTorch, ONNX) by adding in the beginning of the line the backend name in  brackets. For example, `(OpenVINO) Fix bug in NNCF for OpenVINO`.
+- If ca not be categorized by the backend, it should not add any backend name in the beginning of the line. For example, `Fix bug in NNCF`.
+- Each sub category should be sorted by the backend, start with general changes (without backend name) and then sorted in order `OpenVINO`, `PyTorch`, `ONNX`.
+- Add a link to the pull request for each change in the end of line in the format `(#PR_NUMBER)`. For example, if the commit message is "Fix bug in NNCF (#123)", the release notes should include "Fix bug in NNCF (#123)".
 
 ## Constraints
 
-- The skill should only update the `ReleaseNotes.md` file and should not modify any other files in the repository.
+- The skill should only update the `ReleaseNotes.md` file and should do nothing more.
