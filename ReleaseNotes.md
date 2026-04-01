@@ -1,5 +1,40 @@
 # Release Notes
 
+## New in Release 3.1.0
+
+Post-training Quantization:
+
+- Features:
+  - (OpenVINO) Introduced NVFP4 (f4e2m1) data type for weight compression. Uses f4e2m1 precision with constant group size 16, and compresses the scale to f8e4m3 with a second-degree FP32 scale. (#3967)
+  - (OpenVINO) Added `backup_mode` parameter for FP compression formats (FP4, FP8, MXFP4, MXFP8), allowing first and last layers to use an FP backup format instead of INT8. (#3886)
+  - (PyTorch) Added experimental converter for NNCF-compressed linear modules to GPTQModel format with Triton kernel support. (#3848)
+  - (PyTorch) Added `TopKMetatype` support to fix graph building for models with TopK operations, such as YOLO26. (#3944)
+  - Added lazy import of `nncf.torch` in `nncf/__init__.py`, allowing `nncf.torch.*` API to be accessible without explicit `import nncf.torch`. (#3862)
+- Fixes:
+  - (OpenVINO) Fixed incorrect usage of `do_float_quantization` after NVFP4 introduction that caused wrong compressed weights in the scale estimation algorithm. (#3991)
+  - (OpenVINO) Fixed scale estimation for the adaptive codebook compression type for improved accuracy. (#3888)
+  - (OpenVINO) Extended RoPe ignored pattern to cover cases without a transpose node, fixing weight compression for the Phi-3.5-moe model. (#3989)
+  - (ONNX) Fixed `nncf.errors.ValidationError` about missing tensor names during ONNX model transformations. (#3988)
+- Improvements:
+  - Migrated internal `NNCFGraph` from `nx.DiGraph` to `nx.MultiDiGraph` to correctly represent and quantize models with parallel edges (e.g., YOLO26 SDPA blocks, RoPE patterns with parallel inputs). (#3843)
+  - Added documentation section explaining the gradient computation formula for Quantization-Aware Training. (#3965)
+  - Added Olive to the NNCF integrations section in documentation. (#3998)
+
+Deprecations/Removals:
+
+- Removed outdated scripts from the `tools` directory. (#3939)
+
+Requirements:
+
+- Updated OpenVINO to 2026.1.0rc2. (#4005)
+- Updated PyTorch (2.10.0), TorchAO (0.16.0), and Torchvision (0.25.0) versions. (#3852)
+- (PyTorch) Migrated from `torch.ao` to the standalone `torchao` package. (#3854)
+- (ONNX) Updated onnxruntime from 1.21.1 to 1.24.3. (#3977)
+- (ONNX) Updated onnx from 1.17.0 to 1.20.1. (#3966)
+- Updated numpy upper bound to <2.5.0. (#3875)
+- Moved pandas to optional dependencies. (#3970)
+- Removed unused pillow dependency. (#3929)
+
 ## New in Release 3.0.0
 
 Post-training Quantization:
