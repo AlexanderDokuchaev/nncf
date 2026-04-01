@@ -49,10 +49,16 @@ Known issues:
 Deprecations/Removals:
 - ...
 Requirements:
-...
+- ...
 ```
 
-- Keep `Tutorials` and `Known issues` sections empty if there are no relevant changes for them.
+- Keep `Tutorials` and `Known issues` sections empty if there are no relevant changes for them as:
+```
+Tutorials:
+- ...
+Known issues:
+- ...
+```
 
 ## Constraints
 
