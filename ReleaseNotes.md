@@ -1,5 +1,40 @@
 # Release Notes
 
+## New in Release 3.1.0
+
+Post-training Quantization:
+
+- Features:
+  - (OpenVINO) Introduced NVFP4 (f4e2m1) weight compression support with a constant group size of 16, where the scale is compressed to f8e4m3 using a single fp32 second-degree scale (#3967).
+  - (OpenVINO) Added `backup_mode` parameter for FP compression formats. MXFP8 backup mode is now available for MXFP4 and MXFP8 types, and FP8 backup mode for FP4 and FP8 types, enabling fully FP-compressed models without mixing with INT8 for first/last layers (#3886).
+  - Added experimental GPTQModel converter to export NNCF-compressed linear modules to GPTQModel format, currently supporting the Triton kernel (#3848).
+- Fixes:
+  - Fixed incorrect usage of `do_float_quantization` in Weight Compression (#3991).
+  - (OpenVINO) Fixed RoPe ignored pattern detection for models without a transpose operation (#3989).
+  - (OpenVINO) Fixed scale estimation for adaptive codebook weight compression (#3888).
+  - (ONNX) Fixed `ValidationError: There is no tensor with the name` error during weight compression (#3988).
+  - (ONNX) Fixed incorrect insertion of `MatMulNBits` nodes (#3889).
+  - (ONNX) Removed names of removed initializers from graph inputs (#3885).
+- Improvements:
+  - Migrated `NNCFGraph` from `nx.DiGraph` to `nx.MultiDiGraph` to correctly support models with parallel edges, such as YOLO26 SDPA blocks and RoPE patterns (#3843).
+  - Removed redundant backend-specific `get_raw_statistic_collector` abstract methods (#3979).
+  - (PyTorch) Added lazy import for the `nncf.torch` module, allowing `nncf.torch.load_from_config` without a separate `import nncf.torch` statement (#3862).
+  - (PyTorch) Added `TopKMetatype` support, fixing graph building for YOLO26 model in TorchFX backend (#3944).
+  - (TorchFX) Migrated from deprecated `torch.ao` to `torchao` for ExecuTorch quantization (#3854).
+- Documentation:
+  - Added "Gradient Computation for Quantization-Aware Training" section to the documentation, clarifying custom backward formulas (#3965).
+  - Added Olive to the Integrations section (#3998).
+
+Requirements:
+
+- Updated OpenVINO to 2026.1.0 (#4005).
+- Updated PyTorch to 2.10.0 (#3852).
+- Updated ONNX Runtime from 1.21.1 to 1.24.3 (#3977).
+- Updated ONNX from 1.17.0 to 1.20.1 (#3966).
+- Updated `onnx-ir` to 0.1.15 (#3914).
+- Moved `pandas` to optional dependency (#3970).
+- Removed unused `pillow` dependency (#3929).
+
 ## New in Release 3.0.0
 
 Post-training Quantization:
