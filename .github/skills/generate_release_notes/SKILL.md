@@ -52,7 +52,7 @@ Requirements:
 - ...
 ```
 
-- Keep `Tutorials` and `Known issues` sections empty if there are no relevant changes for them as:
+- Keep `Tutorials` and `Known issues` sections empty if there are no relevant changes with `- ...` in these sections.
 ```
 Tutorials:
 - ...
