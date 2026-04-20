@@ -1,0 +1,48 @@
+name: Add Job Link to PR
+on:
+  workflow_run:
+    workflows: ["Test examples"]
+    types:
+      - requested
+
+permissions:
+  pull-requests: write
+  actions: read
+
+jobs:
+  update-description:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add workflow run link to PR description
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          REPO: ${{ github.repository }}
+        run: |
+          # 1. Get the 'display_title' (the rendered run-name)
+          # Example: "Test examples PR#123 [args]"
+          RUN_NAME=$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq '.display_title')
+
+          # 2. Extract the number following 'PR#'
+          PR_NUM=$(echo "$RUN_NAME" | grep -oP 'PR#\K\d+')
+
+          if [ -z "$PR_NUM" ]; then
+            echo "Could not find PR number in run name: $RUN_NAME"
+            exit 0
+          fi
+
+          # 3. Get current PR body
+          CURRENT_BODY=$(gh pr view "$PR_NUM" -R "$REPO" --json body --jq '.body')
+
+          # 4. Prepare the update
+          RUN_URL="${{ github.event.workflow_run.html_url }}"
+          WORKFLOW_NAME="${{ github.event.workflow_run.name }}"
+          NEW_LINE="$WORKFLOW_NAME: $RUN_URL"
+
+          # 5. Avoid duplicates and update
+          if echo "$CURRENT_BODY" | grep -qF "$RUN_URL"; then
+            echo "Link already exists."
+          else
+            UPDATED_BODY=$(printf "%s\n\n%s" "$CURRENT_BODY" "$NEW_LINE")
+            gh pr edit "$PR_NUM" -R "$REPO" --body "$UPDATED_BODY"
+          fi
