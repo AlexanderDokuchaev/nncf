@@ -1,7 +1,9 @@
-name: Add Job Link to PR
+name: "Add Job Link to PR"
 on:
   workflow_run:
-    workflows: ["Test examples"]
+    workflows:
+      - "Test examples"
+      - "Weight compression"
     types:
       - requested
 
@@ -37,12 +39,22 @@ jobs:
           # 4. Prepare the update
           RUN_URL="${{ github.event.workflow_run.html_url }}"
           WORKFLOW_NAME="${{ github.event.workflow_run.name }}"
-          NEW_LINE="$WORKFLOW_NAME: $RUN_URL"
+          NEW_LINE="[$WORKFLOW_NAME]($RUN_URL)"
 
-          # 5. Avoid duplicates and update
-          if echo "$CURRENT_BODY" | grep -qF "$RUN_URL"; then
+          # 5. Replace previous link or append a new one
+          if echo "$CURRENT_BODY" | grep -qF "$NEW_LINE"; then
             echo "Link already exists."
           else
-            UPDATED_BODY=$(printf "%s\n\n%s" "$CURRENT_BODY" "$NEW_LINE")
+            LINK_PREFIX="[$WORKFLOW_NAME]("
+
+            if echo "$CURRENT_BODY" | grep -qF "$LINK_PREFIX"; then
+              OLD_LINE=$(printf '%s\n' "$CURRENT_BODY" | grep -m1 -F "$LINK_PREFIX")
+              UPDATED_BODY="${CURRENT_BODY/$OLD_LINE/$NEW_LINE}"
+            elif [ -n "$CURRENT_BODY" ]; then
+              UPDATED_BODY=$(printf '%s\n\n%s' "$CURRENT_BODY" "$NEW_LINE")
+            else
+              UPDATED_BODY="$NEW_LINE"
+            fi
+
             gh pr edit "$PR_NUM" -R "$REPO" --body "$UPDATED_BODY"
           fi
