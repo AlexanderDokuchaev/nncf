@@ -82,6 +82,19 @@ jobs:
               UPDATED_BODY="$NEW_LINE"
             fi
 
+            echo "New PR body:"
+            echo "$UPDATED_BODY"
+            echo ""
             gh pr edit "$PR_NUM" -R "$REPO" --body "$UPDATED_BODY"
-            echo "PR #$PR_NUM description updated successfully."
+            echo "$?"
+
+            VERIFIED_BODY=$(gh pr view "$PR_NUM" -R "$REPO" --json body --jq '.body')
+            if echo "$VERIFIED_BODY" | grep -qF "$NEW_LINE"; then
+              echo "PR #$PR_NUM description updated successfully."
+            else
+              echo "ERROR: PR #$PR_NUM description update failed - new link not found in body after edit."
+              echo "Expected line: $NEW_LINE"
+              echo "Actual body:"
+              echo "$VERIFIED_BODY"
+            fi
           fi
