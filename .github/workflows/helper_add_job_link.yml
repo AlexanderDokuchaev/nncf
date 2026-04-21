@@ -70,7 +70,7 @@ jobs:
 
           if [ -n "$OLD_LINE" ]; then
             echo "Replacing existing link: $OLD_LINE"
-            OLD_ESC=$(printf '%s\n' "$OLD_LINE" | sed "s/[.[\\*^\\$()+?{|}]/\\\\&/g")
+            OLD_ESC=$(printf '%s\n' "$OLD_LINE" | sed "s#[.[\\*^\\$()+?{|}/]#\\\\&#g")
             NEW_ESC=$(printf '%s\n' "$NEW_LINE" | sed 's/[&/]/\\&/g')
             UPDATED_BODY=$(printf '%s\n' "$CURRENT_BODY" | sed "0,/$OLD_ESC/s//$NEW_ESC/")
           elif [ -n "$CURRENT_BODY" ]; then
