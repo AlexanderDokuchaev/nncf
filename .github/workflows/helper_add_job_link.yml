@@ -35,8 +35,13 @@ jobs:
           echo "Triggered by workflow '${{ github.event.workflow_run.name }}' (run #$RUN_ID, event: ${{ github.event.action }})."
 
           # 1. Get the 'display_title' (the rendered run-name, e.g. "Test examples PR#123 [args]")
-          DISPLAY_TITLE=$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq '.display_title')
+          #    and workflow_id to resolve the static workflow name
+          RUN_DATA=$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq '{display_title: .display_title, workflow_id: .workflow_id}')
+          DISPLAY_TITLE=$(echo "$RUN_DATA" | jq -r '.display_title')
+          WORKFLOW_ID=$(echo "$RUN_DATA" | jq -r '.workflow_id')
+          WORKFLOW_NAME=$(gh api "repos/$REPO/actions/workflows/$WORKFLOW_ID" --jq '.name')
           echo "Run display title: $DISPLAY_TITLE"
+          echo "Workflow name: $WORKFLOW_NAME"
 
           # 2. Extract the number following 'PR#'
           PR_NUM=$(echo "$DISPLAY_TITLE" | grep -oP 'PR#\K\d+')
@@ -53,12 +58,10 @@ jobs:
           echo "Current PR body length: ${#CURRENT_BODY} chars."
 
           # 4. Prepare the update
-          # WORKFLOW_NAME is sourced from the static 'name:' field of the triggering workflow,
-          # not from the display_title / run-name.
           RUN_URL="${{ github.event.workflow_run.html_url }}"
-          WORKFLOW_NAME="${{ github.event.workflow_run.name }}"
           NEW_LINE="[$WORKFLOW_NAME]($RUN_URL) - ${{ github.event.workflow_run.conclusion || github.event.workflow_run.status }}"
           echo "Run URL: $RUN_URL"
+          echo "Name: $WORKFLOW_NAME"
           echo "New link line: $NEW_LINE"
 
           # 5. Replace previous link or append a new one
