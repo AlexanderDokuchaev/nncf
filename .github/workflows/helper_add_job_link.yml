@@ -64,40 +64,34 @@ jobs:
           echo "Name: $WORKFLOW_NAME"
           echo "New link line: $NEW_LINE"
 
-          # 5. Replace previous link or append a new one
-          if echo "$CURRENT_BODY" | grep -qF "$NEW_LINE"; then
-            echo "Identical link already exists. Nothing to update."
+          # 5. Replace previous workflow link or append a new one
+          LINK_PREFIX="[$WORKFLOW_NAME]("
+          OLD_LINE=$(printf '%s\n' "$CURRENT_BODY" | grep -m1 -F "$LINK_PREFIX" || true)
+
+          if [ -n "$OLD_LINE" ]; then
+            echo "Replacing existing link: $OLD_LINE"
+            OLD_ESC=$(printf '%s\n' "$OLD_LINE" | sed "s/[.[\\*^\\$()+?{|}]/\\\\&/g")
+            NEW_ESC=$(printf '%s\n' "$NEW_LINE" | sed 's/[&/]/\\&/g')
+            UPDATED_BODY=$(printf '%s\n' "$CURRENT_BODY" | sed "0,/$OLD_ESC/s//$NEW_ESC/")
+          elif [ -n "$CURRENT_BODY" ]; then
+            echo "No existing link found. Appending to PR body."
+            UPDATED_BODY=$(printf '%s\n\n%s' "$CURRENT_BODY" "$NEW_LINE")
           else
-            LINK_PREFIX="[$WORKFLOW_NAME]("
+            echo "PR body is empty. Creating with link."
+            UPDATED_BODY="$NEW_LINE"
+          fi
 
-            if echo "$CURRENT_BODY" | grep -qF "$LINK_PREFIX"; then
-              OLD_LINE=$(printf '%s\n' "$CURRENT_BODY" | grep -m1 -F "$LINK_PREFIX")
-              echo "Replacing existing link: $OLD_LINE"
-              # Use sed with literal strings: escape special regex/replacement chars
-              OLD_ESC=$(printf '%s\n' "$OLD_LINE" | sed 's/[]\/$*.^[]/\\&/g')
-              NEW_ESC=$(printf '%s\n' "$NEW_LINE" | sed 's/[\/&]/\\&/g')
-              UPDATED_BODY=$(printf '%s\n' "$CURRENT_BODY" | sed "s/$OLD_ESC/$NEW_ESC/")
-            elif [ -n "$CURRENT_BODY" ]; then
-              echo "No existing link found. Appending to PR body."
-              UPDATED_BODY=$(printf '%s\n\n%s' "$CURRENT_BODY" "$NEW_LINE")
-            else
-              echo "PR body is empty. Creating with link."
-              UPDATED_BODY="$NEW_LINE"
-            fi
+          echo "New PR body:"
+          echo "$UPDATED_BODY"
+          echo ""
+          gh pr edit "$PR_NUM" -R "$REPO" --body "$UPDATED_BODY"
 
-            echo "New PR body:"
-            echo "$UPDATED_BODY"
-            echo ""
-            gh pr edit "$PR_NUM" -R "$REPO" --body "$UPDATED_BODY"
-            echo "$?"
-
-            VERIFIED_BODY=$(gh pr view "$PR_NUM" -R "$REPO" --json body --jq '.body')
-            if echo "$VERIFIED_BODY" | grep -qF "$NEW_LINE"; then
-              echo "PR #$PR_NUM description updated successfully."
-            else
-              echo "ERROR: PR #$PR_NUM description update failed - new link not found in body after edit."
-              echo "Expected line: $NEW_LINE"
-              echo "Actual body:"
-              echo "$VERIFIED_BODY"
-            fi
+          VERIFIED_BODY=$(gh pr view "$PR_NUM" -R "$REPO" --json body --jq '.body')
+          if echo "$VERIFIED_BODY" | grep -qF "$NEW_LINE"; then
+            echo "PR #$PR_NUM description updated successfully."
+          else
+            echo "ERROR: PR #$PR_NUM description update failed - new link not found in body after edit."
+            echo "Expected line: $NEW_LINE"
+            echo "Actual body:"
+            echo "$VERIFIED_BODY"
           fi
