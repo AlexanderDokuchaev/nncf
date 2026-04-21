@@ -1,4 +1,4 @@
-name: "Add Job Link with Status to PR Description"
+name: "Add Job Link to PR"
 on:
   workflow_run:
     workflows:
@@ -16,6 +16,10 @@ permissions:
 concurrency:
   group: "update-description"
   cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
   update-description:
