@@ -73,7 +73,10 @@ jobs:
             if echo "$CURRENT_BODY" | grep -qF "$LINK_PREFIX"; then
               OLD_LINE=$(printf '%s\n' "$CURRENT_BODY" | grep -m1 -F "$LINK_PREFIX")
               echo "Replacing existing link: $OLD_LINE"
-              UPDATED_BODY="${CURRENT_BODY/$OLD_LINE/$NEW_LINE}"
+              # Use sed with literal strings: escape special regex/replacement chars
+              OLD_ESC=$(printf '%s\n' "$OLD_LINE" | sed 's/[]\/$*.^[]/\\&/g')
+              NEW_ESC=$(printf '%s\n' "$NEW_LINE" | sed 's/[\/&]/\\&/g')
+              UPDATED_BODY=$(printf '%s\n' "$CURRENT_BODY" | sed "s/$OLD_ESC/$NEW_ESC/")
             elif [ -n "$CURRENT_BODY" ]; then
               echo "No existing link found. Appending to PR body."
               UPDATED_BODY=$(printf '%s\n\n%s' "$CURRENT_BODY" "$NEW_LINE")
