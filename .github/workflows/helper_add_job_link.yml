@@ -6,6 +6,7 @@ on:
       - "Weight compression"
     types:
       - requested
+      - completed
 
 permissions:
   pull-requests: write
@@ -39,7 +40,7 @@ jobs:
           # 4. Prepare the update
           RUN_URL="${{ github.event.workflow_run.html_url }}"
           WORKFLOW_NAME="${{ github.event.workflow_run.name }}"
-          NEW_LINE="[$WORKFLOW_NAME]($RUN_URL)"
+          NEW_LINE="[$WORKFLOW_NAME]($RUN_URL) - ${{ github.event.workflow_run.conclusion || github.event.workflow_run.status }}"
 
           # 5. Replace previous link or append a new one
           if echo "$CURRENT_BODY" | grep -qF "$NEW_LINE"; then
