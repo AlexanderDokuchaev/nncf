@@ -22,40 +22,51 @@ jobs:
           RUN_ID: ${{ github.event.workflow_run.id }}
           REPO: ${{ github.repository }}
         run: |
+          echo "Triggered by workflow '${{ github.event.workflow_run.name }}' (run #$RUN_ID, event: ${{ github.event.action }})."
+
           # 1. Get the 'display_title' (the rendered run-name)
           # Example: "Test examples PR#123 [args]"
           RUN_NAME=$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq '.display_title')
+          echo "Run display title: $RUN_NAME"
 
           # 2. Extract the number following 'PR#'
           PR_NUM=$(echo "$RUN_NAME" | grep -oP 'PR#\K\d+')
 
           if [ -z "$PR_NUM" ]; then
-            echo "Could not find PR number in run name: $RUN_NAME"
+            echo "Could not find PR number in run name '$RUN_NAME'. Skipping."
             exit 0
           fi
 
+          echo "Resolved PR #$PR_NUM."
+
           # 3. Get current PR body
           CURRENT_BODY=$(gh pr view "$PR_NUM" -R "$REPO" --json body --jq '.body')
+          echo "Current PR body length: ${#CURRENT_BODY} chars."
 
           # 4. Prepare the update
           RUN_URL="${{ github.event.workflow_run.html_url }}"
           WORKFLOW_NAME="${{ github.event.workflow_run.name }}"
           NEW_LINE="[$WORKFLOW_NAME]($RUN_URL) - ${{ github.event.workflow_run.conclusion || github.event.workflow_run.status }}"
+          echo "New link line: $NEW_LINE"
 
           # 5. Replace previous link or append a new one
           if echo "$CURRENT_BODY" | grep -qF "$NEW_LINE"; then
-            echo "Link already exists."
+            echo "Identical link already exists. Nothing to update."
           else
             LINK_PREFIX="[$WORKFLOW_NAME]("
 
             if echo "$CURRENT_BODY" | grep -qF "$LINK_PREFIX"; then
               OLD_LINE=$(printf '%s\n' "$CURRENT_BODY" | grep -m1 -F "$LINK_PREFIX")
+              echo "Replacing existing link: $OLD_LINE"
               UPDATED_BODY="${CURRENT_BODY/$OLD_LINE/$NEW_LINE}"
             elif [ -n "$CURRENT_BODY" ]; then
+              echo "No existing link found. Appending to PR body."
               UPDATED_BODY=$(printf '%s\n\n%s' "$CURRENT_BODY" "$NEW_LINE")
             else
+              echo "PR body is empty. Creating with link."
               UPDATED_BODY="$NEW_LINE"
             fi
 
             gh pr edit "$PR_NUM" -R "$REPO" --body "$UPDATED_BODY"
+            echo "PR #$PR_NUM description updated successfully."
           fi
