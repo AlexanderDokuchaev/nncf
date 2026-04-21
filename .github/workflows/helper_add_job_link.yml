@@ -1,4 +1,4 @@
-name: "Add Job Link to PR"
+name: "Add Job Link with Status to PR Description"
 on:
   workflow_run:
     workflows:
@@ -6,14 +6,20 @@ on:
       - "Weight compression"
     types:
       - requested
+      - in_progress
       - completed
 
 permissions:
   pull-requests: write
   actions: read
 
+concurrency:
+  group: "update-description"
+  cancel-in-progress: false
+
 jobs:
   update-description:
+    timeout-minutes: 3
     runs-on: ubuntu-latest
     steps:
       - name: Add workflow run link to PR description
@@ -24,16 +30,15 @@ jobs:
         run: |
           echo "Triggered by workflow '${{ github.event.workflow_run.name }}' (run #$RUN_ID, event: ${{ github.event.action }})."
 
-          # 1. Get the 'display_title' (the rendered run-name)
-          # Example: "Test examples PR#123 [args]"
-          RUN_NAME=$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq '.display_title')
-          echo "Run display title: $RUN_NAME"
+          # 1. Get the 'display_title' (the rendered run-name, e.g. "Test examples PR#123 [args]")
+          DISPLAY_TITLE=$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq '.display_title')
+          echo "Run display title: $DISPLAY_TITLE"
 
           # 2. Extract the number following 'PR#'
-          PR_NUM=$(echo "$RUN_NAME" | grep -oP 'PR#\K\d+')
+          PR_NUM=$(echo "$DISPLAY_TITLE" | grep -oP 'PR#\K\d+')
 
           if [ -z "$PR_NUM" ]; then
-            echo "Could not find PR number in run name '$RUN_NAME'. Skipping."
+            echo "Could not find PR number in display title '$DISPLAY_TITLE'. Skipping."
             exit 0
           fi
 
@@ -44,6 +49,8 @@ jobs:
           echo "Current PR body length: ${#CURRENT_BODY} chars."
 
           # 4. Prepare the update
+          # WORKFLOW_NAME is sourced from the static 'name:' field of the triggering workflow,
+          # not from the display_title / run-name.
           RUN_URL="${{ github.event.workflow_run.html_url }}"
           WORKFLOW_NAME="${{ github.event.workflow_run.name }}"
           NEW_LINE="[$WORKFLOW_NAME]($RUN_URL) - ${{ github.event.workflow_run.conclusion || github.event.workflow_run.status }}"
