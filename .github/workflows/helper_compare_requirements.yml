@@ -7,26 +7,26 @@ on:
   workflow_dispatch:
     inputs:
       compare_with:
-        description: 'The reference to compare with (branch, tag, or commit SHA)'
+        description: 'The reference to compare with (branch, tag, or commit SHA). E.g. "release_v300".'
         type: string
-        required: false
+        required: true
 
 env:
   CURRENT_PATH: current
-  REFERENCE_PATH: release
+  REFERENCE_PATH: reference
 
 jobs:
   compare-requirements:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout current ref
+      - name: Checkout current
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           path: ${{ env.CURRENT_PATH }}
           fetch-depth: 0
 
-      - name: Checkout reference ref
+      - name: Checkout reference
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ inputs.compare_with }}
@@ -34,7 +34,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: '3.12'
 
@@ -48,17 +48,14 @@ jobs:
         run: |
           set -euo pipefail
           python3 "${GITHUB_WORKSPACE}/${{ env.CURRENT_PATH }}/.github/scripts/collect_all_requirements.py" \
-            --output "${GITHUB_WORKSPACE}/release_requirements.txt"
+            --output "${GITHUB_WORKSPACE}/reference_requirements.txt"
 
-      - name: Upload comparison artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
+      - name: Upload artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a #v7.0.1
         with:
-          name: requirements-compare
-          path: |
-            "release_requirements.txt"
-            "current_requirements.txt"
-          if-no-files-found: ignore
+          name: requirements
+          path: "./*_requirements.txt"
+          retention-days: 30
 
       - name: Summary
         if: always()
@@ -67,11 +64,11 @@ jobs:
             echo "## Added dependencies:"
             echo
             printf '%s\n' '```diff'
-            comm -23 "release_requirements.txt" "current_requirements.txt" || true
+            comm -23 "current_requirements.txt" "reference_requirements.txt"  || true
             printf '%s\n' '```'
             echo "## Removed dependencies:"
             echo
             printf '%s\n' '```diff'
-            comm -13 "release_requirements.txt" "current_requirements.txt" || true
+            comm -13 "current_requirements.txt" "reference_requirements.txt"  || true
             printf '%s\n' '```'
           } >> "${GITHUB_STEP_SUMMARY}"
