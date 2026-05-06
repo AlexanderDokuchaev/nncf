@@ -1,4 +1,6 @@
-name: Compare requarements vs latest release
+name: Compare requirements
+run-name: "Compare requirements with ${{ inputs.compare_with }}"
+
 permissions: read-all
 
 on:
@@ -34,12 +36,12 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
 
       - name: Collect current dependencies
         working-directory: ${{ env.CURRENT_PATH }}
         run:
-          python3 .github/scripts/collect_all_requirements.py --output "${RUNNER_TEMP}/current_requirements.txt"
+          python3 .github/scripts/collect_all_requirements.py --output "${GITHUB_WORKSPACE}/current_requirements.txt"
 
       - name: Collect reference dependencies
         working-directory: ${{ env.REFERENCE_PATH }}
