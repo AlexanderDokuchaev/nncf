@@ -50,44 +50,28 @@ jobs:
           python3 "${GITHUB_WORKSPACE}/${{ env.CURRENT_PATH }}/.github/scripts/collect_all_requirements.py" \
             --output "${GITHUB_WORKSPACE}/release_requirements.txt"
 
-      - name: Compare dependencies
-        run: |
-          set -euo pipefail
-          if ! diff -u "${GITHUB_WORKSPACE}/release_requirements.txt" "${GITHUB_WORKSPACE}/current_requirements.txt" > "${GITHUB_WORKSPACE}/requirements.diff"; then
-            echo "Dependency lists differ from latest release:"
-            awk 'NR > 2' "${GITHUB_WORKSPACE}/requirements.diff" | grep -E '^\+|^\-' > "${GITHUB_WORKSPACE}/summary.txt"
-            cat "${GITHUB_WORKSPACE}/requirements.diff"
-          fi
-          echo "No dependency differences found."
-
       - name: Upload comparison artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: requirements-compare
           path: |
-            "${GITHUB_WORKSPACE}/release_requirements.txt"
-            "${GITHUB_WORKSPACE}/current_requirements.txt"
-            "${GITHUB_WORKSPACE}/requirements.diff"
-            "${GITHUB_WORKSPACE}/summary.txt"
+            "release_requirements.txt"
+            "current_requirements.txt"
           if-no-files-found: ignore
 
       - name: Summary
         if: always()
         run: |
-          if [ -s "${GITHUB_WORKSPACE}/summary.txt" ]; then
-            {
-              echo "# New dependencies:"
-              echo
-              printf '%s\n' '```diff'
-              grep '^+' "${GITHUB_WORKSPACE}/summary.txt" || true
-              printf '%s\n' '```'
-              echo "# Removed dependencies:"
-              echo
-              printf '%s\n' '```diff'
-              grep '^-' "${GITHUB_WORKSPACE}/summary.txt" || true
-              printf '%s\n' '```'
-            } >> "${GITHUB_STEP_SUMMARY}"
-          else
-            echo "No dependency differences found." >> "${GITHUB_STEP_SUMMARY}"
-          fi
+          {
+            echo "## Added dependencies:"
+            echo
+            printf '%s\n' '```diff'
+            comm -23 "release_requirements.txt" "current_requirements.txt" || true
+            printf '%s\n' '```'
+            echo "## Removed dependencies:"
+            echo
+            printf '%s\n' '```diff'
+            comm -13 "release_requirements.txt" "current_requirements.txt" || true
+            printf '%s\n' '```'
+          } >> "${GITHUB_STEP_SUMMARY}"

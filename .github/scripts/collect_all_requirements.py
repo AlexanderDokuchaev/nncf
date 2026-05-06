@@ -83,7 +83,7 @@ def main() -> int:
     requirements = get_unique_packages_from_requirements_files()
     package_requirements = get_package_requirements()
     total_requirements = sorted(requirements | package_requirements)
-    output_text = "\n".join(total_requirements)
+    output_text = "\n".join(total_requirements) + "\n"
 
     if args.output is not None:
         args.output.parent.mkdir(parents=True, exist_ok=True)
