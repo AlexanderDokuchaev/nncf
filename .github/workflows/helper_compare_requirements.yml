@@ -21,6 +21,7 @@ env:
   TARGET_DIR: target
   CURRENT_FILE: current_requirements.txt
   TARGET_FILE: target_requirements.txt
+  SCRIPT_PATH: ".github/scripts/collect_all_requirements.py"
 
 jobs:
   compare-requirements:
@@ -46,12 +47,12 @@ jobs:
       - name: Collect current dependencies
         working-directory: ${{ env.CURRENT_DIR }}
         run:
-          python3 .github/scripts/collect_all_requirements.py --output "${GITHUB_WORKSPACE}/${{ env.CURRENT_FILE }}"
+          python3 ${{ env.SCRIPT_PATH }} --output "${GITHUB_WORKSPACE}/${{ env.CURRENT_FILE }}"
 
       - name: Collect target dependencies
         working-directory: ${{ env.TARGET_DIR }}
         run: |
-          python3 "${GITHUB_WORKSPACE}/${{ env.CURRENT_DIR }}/.github/scripts/collect_all_requirements.py" \
+          python3 "${GITHUB_WORKSPACE}/${{ env.CURRENT_DIR }}/${{ env.SCRIPT_PATH}}" \
             --output "${GITHUB_WORKSPACE}/${{ env.TARGET_FILE }}"
 
       - name: Upload artifacts
