@@ -1,13 +1,13 @@
 name: Compare requirements
-run-name: "Compare requirements with ${{ inputs.compare_with }}"
+run-name: "Compare requirements with ${{ inputs.target_ref }}"
 
 permissions: read-all
 
 on:
   workflow_dispatch:
     inputs:
-      compare_with:
-        description: 'The reference to compare with (branch, tag, or commit SHA). E.g. "release_v300".'
+      target_ref:
+        description: 'The target to compare with (branch, tag, or commit SHA). E.g. "release_v300".'
         type: string
         required: true
 
@@ -16,27 +16,27 @@ defaults:
     shell: bash
 
 env:
-  CURRENT_PATH: current
-  REFERENCE_PATH: reference
+  CURRENT_DIR: current
+  TARGET_DIR: target
   CURRENT_FILE: current_requirements.txt
-  REFERENCE_FILE: reference_requirements.txt
+  TARGET_FILE: target_requirements.txt
 
 jobs:
   compare-requirements:
     runs-on: ubuntu-latest
-
+    timeout-minutes: 10
     steps:
       - name: Checkout current
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          path: ${{ env.CURRENT_PATH }}
+          path: ${{ env.CURRENT_DIR }}
           fetch-depth: 0
 
-      - name: Checkout reference
+      - name: Checkout target
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: ${{ inputs.compare_with }}
-          path: ${{ env.REFERENCE_PATH }}
+          ref: ${{ inputs.target_ref }}
+          path: ${{ env.TARGET_DIR }}
           fetch-depth: 0
 
       - name: Setup Python
@@ -45,16 +45,15 @@ jobs:
           python-version: '3.12'
 
       - name: Collect current dependencies
-        working-directory: ${{ env.CURRENT_PATH }}
+        working-directory: ${{ env.CURRENT_DIR }}
         run:
           python3 .github/scripts/collect_all_requirements.py --output "${GITHUB_WORKSPACE}/${{ env.CURRENT_FILE }}"
 
-      - name: Collect reference dependencies
-        working-directory: ${{ env.REFERENCE_PATH }}
+      - name: Collect target dependencies
+        working-directory: ${{ env.TARGET_DIR }}
         run: |
-          set -euo pipefail
-          python3 "${GITHUB_WORKSPACE}/${{ env.CURRENT_PATH }}/.github/scripts/collect_all_requirements.py" \
-            --output "${GITHUB_WORKSPACE}/${{ env.REFERENCE_FILE }}"
+          python3 "${GITHUB_WORKSPACE}/${{ env.CURRENT_DIR }}/.github/scripts/collect_all_requirements.py" \
+            --output "${GITHUB_WORKSPACE}/${{ env.TARGET_FILE }}"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a #v7.0.1
@@ -69,17 +68,17 @@ jobs:
           {
             echo "## Added dependencies:"
             echo
-            printf '%s\n' '```diff'
-            comm -23 "${{ env.CURRENT_FILE }}" "${{ env.REFERENCE_FILE }}"  || true
+            printf '%s\n' '```txt'
+            comm -23 "${{ env.CURRENT_FILE }}" "${{ env.TARGET_FILE }}"  || true
             printf '%s\n' '```'
             echo "## Removed dependencies:"
             echo
-            printf '%s\n' '```diff'
-            comm -13 "${{ env.CURRENT_FILE }}" "${{ env.REFERENCE_FILE }}"  || true
+            printf '%s\n' '```txt'
+            comm -13 "${{ env.CURRENT_FILE }}" "${{ env.TARGET_FILE }}"  || true
             printf '%s\n' '```'
             echo "## All current dependencies:"
             echo
-            printf '%s\n' '```diff'
+            printf '%s\n' '```txt'
             cat "${{ env.CURRENT_FILE }}"
             printf '%s\n' '```'
           } >> "${GITHUB_STEP_SUMMARY}"
