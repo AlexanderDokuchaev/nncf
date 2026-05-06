@@ -71,4 +71,9 @@ jobs:
             printf '%s\n' '```diff'
             comm -13 "current_requirements.txt" "reference_requirements.txt"  || true
             printf '%s\n' '```'
+            echo "## All current dependencies:"
+            echo
+            printf '%s\n' '```diff'
+            cat "current_requirements.txt"
+            printf '%s\n' '```'
           } >> "${GITHUB_STEP_SUMMARY}"
