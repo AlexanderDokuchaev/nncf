@@ -77,17 +77,16 @@ jobs:
         run: |
           if [ -s "${GITHUB_WORKSPACE}/summary.txt" ]; then
             {
-              echo "## Dependency differences found:"
+              echo "# New dependencies:"
               echo
-              echo "Diff lines:"
-              cat "${GITHUB_WORKSPACE}/summary.txt"
-              echo
-              echo "New dependencies:"
+              printf '%s\n' '```diff'
               grep '^+' "${GITHUB_WORKSPACE}/summary.txt" || true
+              printf '%s\n' '```'
+              echo "# Removed dependencies:"
               echo
-              echo "Removed dependencies:"
+              printf '%s\n' '```diff'
               grep '^-' "${GITHUB_WORKSPACE}/summary.txt" || true
-              echo
+              printf '%s\n' '```'
             } >> "${GITHUB_STEP_SUMMARY}"
           else
             echo "No dependency differences found." >> "${GITHUB_STEP_SUMMARY}"
