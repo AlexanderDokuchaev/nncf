@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       target_ref:
-        description: 'The target to compare with (branch, tag, or commit SHA). E.g. "release_v300".'
+        description: 'The reference to compare with (branch, tag, or commit SHA). E.g. "release_v300".'
         type: string
         required: true
 
