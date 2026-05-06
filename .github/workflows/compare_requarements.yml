@@ -1,0 +1,79 @@
+name: Compare requarements vs latest release
+permissions: read-all
+
+on:
+  workflow_dispatch:
+    inputs:
+      compare_with:
+        description: 'The reference to compare with (branch, tag, or commit SHA)'
+        type: string
+        required: false
+
+env:
+  CURRENT_PATH: current
+  REFERENCE_PATH: release
+
+jobs:
+  compare-requirements:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout current ref
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.CURRENT_PATH }}
+          fetch-depth: 0
+
+      - name: Checkout reference ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.compare_with }}
+          path: ${{ env.REFERENCE_PATH }}
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Collect current dependencies
+        working-directory: ${{ env.CURRENT_PATH }}
+        run:
+          python3 .github/scripts/collect_all_requirements.py --output "${RUNNER_TEMP}/current_requirements.txt"
+
+      - name: Collect reference dependencies
+        working-directory: ${{ env.REFERENCE_PATH }}
+        run: |
+          set -euo pipefail
+          python3 "${GITHUB_WORKSPACE}/${{ env.CURRENT_PATH }}/.github/scripts/collect_all_requirements.py" \
+            --output "${GITHUB_WORKSPACE}/release_requirements.txt"
+
+      - name: Compare dependencies
+        run: |
+          set -euo pipefail
+          if ! diff -u "${GITHUB_WORKSPACE}/release_requirements.txt" "${GITHUB_WORKSPACE}/current_requirements.txt" > "${GITHUB_WORKSPACE}/requirements.diff"; then
+            echo "Dependency lists differ from latest release:"
+            cat "${GITHUB_WORKSPACE}/requirements.diff"
+          fi
+          echo "No dependency differences found."
+
+      - name: Upload comparison artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: requirements-compare
+          path: |
+            "${GITHUB_WORKSPACE}/release_requirements.txt"
+            "${GITHUB_WORKSPACE}/current_requirements.txt"
+            "${GITHUB_WORKSPACE}/requirements.diff"
+          if-no-files-found: ignore
+
+      - name: Summary
+        if: always()
+        run: |
+          if [ -s "${GITHUB_WORKSPACE}/requirements.diff" ]; then
+            echo "## Dependency differences found:" >> "${GITHUB_STEP_SUMMARY}"
+            cat "${GITHUB_WORKSPACE}/requirements.diff" >> "${GITHUB_STEP_SUMMARY}"
+          else
+            echo "No dependency differences found." >> "${GITHUB_STEP_SUMMARY}"
+          fi
