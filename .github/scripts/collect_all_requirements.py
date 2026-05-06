@@ -28,7 +28,7 @@ def _run_command(command: list[str]) -> str:
 
 def _package_name(requirement_line: str) -> str | None:
     match = re.match(r"^[A-Za-z0-9][A-Za-z0-9_.-]*", requirement_line.strip())
-    return match.group(0) if match else None
+    return match.group(0).lower() if match else None
 
 
 def collect_requirements_files() -> list[Path]:

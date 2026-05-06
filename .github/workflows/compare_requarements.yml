@@ -55,6 +55,7 @@ jobs:
           set -euo pipefail
           if ! diff -u "${GITHUB_WORKSPACE}/release_requirements.txt" "${GITHUB_WORKSPACE}/current_requirements.txt" > "${GITHUB_WORKSPACE}/requirements.diff"; then
             echo "Dependency lists differ from latest release:"
+            awk 'NR > 2' "${GITHUB_WORKSPACE}/requirements.diff" | grep -E '^\+|^\-' > "${GITHUB_WORKSPACE}/summary.txt"
             cat "${GITHUB_WORKSPACE}/requirements.diff"
           fi
           echo "No dependency differences found."
@@ -68,14 +69,26 @@ jobs:
             "${GITHUB_WORKSPACE}/release_requirements.txt"
             "${GITHUB_WORKSPACE}/current_requirements.txt"
             "${GITHUB_WORKSPACE}/requirements.diff"
+            "${GITHUB_WORKSPACE}/summary.txt"
           if-no-files-found: ignore
 
       - name: Summary
         if: always()
         run: |
-          if [ -s "${GITHUB_WORKSPACE}/requirements.diff" ]; then
-            echo "## Dependency differences found:" >> "${GITHUB_STEP_SUMMARY}"
-            cat "${GITHUB_WORKSPACE}/requirements.diff" >> "${GITHUB_STEP_SUMMARY}"
+          if [ -s "${GITHUB_WORKSPACE}/summary.txt" ]; then
+            {
+              echo "## Dependency differences found:"
+              echo
+              echo "Diff lines:"
+              cat "${GITHUB_WORKSPACE}/summary.txt"
+              echo
+              echo "New dependencies:"
+              grep '^+' "${GITHUB_WORKSPACE}/summary.txt" || true
+              echo
+              echo "Removed dependencies:"
+              grep '^-' "${GITHUB_WORKSPACE}/summary.txt" || true
+              echo
+            } >> "${GITHUB_STEP_SUMMARY}"
           else
             echo "No dependency differences found." >> "${GITHUB_STEP_SUMMARY}"
           fi
