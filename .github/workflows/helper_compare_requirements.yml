@@ -11,9 +11,15 @@ on:
         type: string
         required: true
 
+defaults:
+  run:
+    shell: bash
+
 env:
   CURRENT_PATH: current
   REFERENCE_PATH: reference
+  CURRENT_FILE: current_requirements.txt
+  REFERENCE_FILE: reference_requirements.txt
 
 jobs:
   compare-requirements:
@@ -41,14 +47,14 @@ jobs:
       - name: Collect current dependencies
         working-directory: ${{ env.CURRENT_PATH }}
         run:
-          python3 .github/scripts/collect_all_requirements.py --output "${GITHUB_WORKSPACE}/current_requirements.txt"
+          python3 .github/scripts/collect_all_requirements.py --output "${GITHUB_WORKSPACE}/${{ env.CURRENT_FILE }}"
 
       - name: Collect reference dependencies
         working-directory: ${{ env.REFERENCE_PATH }}
         run: |
           set -euo pipefail
           python3 "${GITHUB_WORKSPACE}/${{ env.CURRENT_PATH }}/.github/scripts/collect_all_requirements.py" \
-            --output "${GITHUB_WORKSPACE}/reference_requirements.txt"
+            --output "${GITHUB_WORKSPACE}/${{ env.REFERENCE_FILE }}"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a #v7.0.1
@@ -64,16 +70,16 @@ jobs:
             echo "## Added dependencies:"
             echo
             printf '%s\n' '```diff'
-            comm -23 "current_requirements.txt" "reference_requirements.txt"  || true
+            comm -23 "${{ env.CURRENT_FILE }}" "${{ env.REFERENCE_FILE }}"  || true
             printf '%s\n' '```'
             echo "## Removed dependencies:"
             echo
             printf '%s\n' '```diff'
-            comm -13 "current_requirements.txt" "reference_requirements.txt"  || true
+            comm -13 "${{ env.CURRENT_FILE }}" "${{ env.REFERENCE_FILE }}"  || true
             printf '%s\n' '```'
             echo "## All current dependencies:"
             echo
             printf '%s\n' '```diff'
-            cat "current_requirements.txt"
+            cat "${{ env.CURRENT_FILE }}"
             printf '%s\n' '```'
           } >> "${GITHUB_STEP_SUMMARY}"
