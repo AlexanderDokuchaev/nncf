@@ -53,7 +53,6 @@ jobs:
         id: create_branch
         env:
           BRANCH_NAME: ${{ steps.branch_name.outputs.branch_name }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
 
@@ -64,7 +63,7 @@ jobs:
           git checkout "${BASE_BRANCH}"
           git pull --ff-only origin "${BASE_BRANCH}"
           git checkout -b "${BRANCH_NAME}"
-          git push origin "${BRANCH_NAME}"
+          # git push origin "${BRANCH_NAME}"
           echo "release_branch=${BRANCH_NAME}" >> "${GITHUB_OUTPUT}"
 
       - name: Agent task to create PR for the release branch
@@ -77,7 +76,7 @@ jobs:
           set -euo pipefail
 
           sleep 30 # Wait for branch to be available on GitHub
-
+          gh auth status
           gh agent-task create \
             --base "${{ steps.create_branch.outputs.release_branch }}" \
             "Generate Release Notes"
