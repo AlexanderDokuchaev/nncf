@@ -1,4 +1,4 @@
-name: "[Release] Initialize release"
+name: "[Release] Initialize"
 
 permissions: read-all
 
@@ -50,6 +50,7 @@ jobs:
           echo "branch_name=${BRANCH_NAME}" >> "${GITHUB_OUTPUT}"
 
       - name: Create branch
+        id: create_branch
         env:
           BRANCH_NAME: ${{ steps.branch_name.outputs.branch_name }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -64,6 +65,23 @@ jobs:
           git pull --ff-only origin "${BASE_BRANCH}"
           git checkout -b "${BRANCH_NAME}"
           git push origin "${BRANCH_NAME}"
+          echo "release_branch=${BRANCH_NAME}" >> "${GITHUB_OUTPUT}"
+
+      - name: Agent task to create PR for the release branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          BASE_BRANCH: ${{ env.BASE_BRANCH }}
+          BRANCH_NAME: ${{ steps.branch_name.outputs.branch_name }}
+        run: |
+          set -euo pipefail
+
+          sleep 30 # Wait for branch to be available on GitHub
+
+          gh agent task create \
+            --repo "${REPO}" \
+            --base "${{ steps.create_branch.outputs.release_branch }}" \
+            "Generate Release Notes"
 
   bump_version:
     runs-on: ubuntu-latest
@@ -140,7 +158,8 @@ jobs:
           # Push the branch
           git push --set-upstream origin "${BUMP_BRANCH}"
 
-          PR_BODY="### Changes:\n\nBumped version to ${NEW_VERSION}"
+          PR_BODY="Bumped version to ${NEW_VERSION}"
+
           # Create pull request
           gh pr create \
             --repo "${REPO}" \
