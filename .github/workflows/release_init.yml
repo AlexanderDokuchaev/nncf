@@ -1,0 +1,150 @@
+name: "[Release] Initialize release"
+
+permissions: read-all
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: "Select type of release"
+        required: true
+        type: choice
+        default: minor
+        options:
+          - major
+          - minor
+          - patch
+
+env:
+  BASE_BRANCH: develop
+
+jobs:
+  create_release_branch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ env.BASE_BRANCH }}
+
+      - name: Compute release branch name from version.py
+        id: branch_name
+        run: |
+          set -euo pipefail
+
+          CUR_VERSION="$(grep -E '^__version__[[:space:]]*=' src/nncf/version.py | head -n 1 | sed -E "s/^__version__[[:space:]]*=[[:space:]]*['\"]([^'\"]+)['\"].*/\1/")"
+
+          if [[ -z "${CUR_VERSION}" ]]; then
+            echo "Failed to parse __version__ from src/nncf/version.py" >&2
+            exit 1
+          fi
+
+          BRANCH_NAME="release_v$(echo "${CUR_VERSION}" | tr -d '.')"
+
+          echo "Current version: ${CUR_VERSION}"
+          echo "Computed branch name: ${BRANCH_NAME}"
+
+          echo "branch_name=${BRANCH_NAME}" >> "${GITHUB_OUTPUT}"
+
+      - name: Create branch
+        env:
+          BRANCH_NAME: ${{ steps.branch_name.outputs.branch_name }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          # Configure git (needed to push)
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git checkout "${BASE_BRANCH}"
+          git pull --ff-only origin "${BASE_BRANCH}"
+          git checkout -b "${BRANCH_NAME}"
+          git push origin "${BRANCH_NAME}"
+
+  bump_version:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ env.BASE_BRANCH }}
+
+      - name: Bump version in version.py
+        id: bump_version
+        env:
+          RELEASE_TYPE: ${{ github.event.inputs.release_type }}
+        run: |
+          set -euo pipefail
+
+          # Read current version
+          CUR_VERSION="$(grep -E '^__version__[[:space:]]*=' src/nncf/version.py | sed -E "s/^__version__[[:space:]]*=[[:space:]]*['\"]([^'\"]+)['\"].*/\1/")"
+          echo "Current version: ${CUR_VERSION}"
+
+          # Parse version components
+          MAJOR=$(echo "${CUR_VERSION}" | cut -d. -f1)
+          MINOR=$(echo "${CUR_VERSION}" | cut -d. -f2)
+          PATCH=$(echo "${CUR_VERSION}" | cut -d. -f3)
+
+          # Bump version according selected release type
+          case "${RELEASE_TYPE}" in
+            major)
+              NEW_VERSION="$((MAJOR + 1)).0.0"
+              ;;
+            minor)
+              NEW_VERSION="${MAJOR}.$((MINOR + 1)).0"
+              ;;
+            patch)
+              NEW_VERSION="${MAJOR}.${MINOR}.$((PATCH + 1))"
+              ;;
+            *)
+              echo "Unsupported release_type: ${RELEASE_TYPE}" >&2
+              exit 1
+              ;;
+          esac
+
+          echo "New version: ${NEW_VERSION}"
+
+          # Update version.py
+          sed -i "s/__version__[[:space:]]*=.*/__version__ = \"${NEW_VERSION}\"/" src/nncf/version.py
+
+          echo "new_version=${NEW_VERSION}" >> "${GITHUB_OUTPUT}"
+      - name: Create PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEW_VERSION: ${{ steps.bump_version.outputs.new_version }}
+          REPO: ${{ github.repository }}
+          REPO_OWNER: ${{ github.repository_owner }}
+        run: |
+          set -euo pipefail
+
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Create a new branch for the version bump
+          BUMP_BRANCH="bump_version_$(echo "${NEW_VERSION}" | tr -d .)"
+          git checkout -b "${BUMP_BRANCH}"
+
+          # Commit the version bump
+          git add src/nncf/version.py
+          git commit -m "Bump version to ${NEW_VERSION}"
+
+          # Push the branch
+          git push --set-upstream origin "${BUMP_BRANCH}"
+
+          PR_BODY="### Changes:\n\nBumped version to ${NEW_VERSION}"
+          # Create pull request
+          gh pr create \
+            --repo "${REPO}" \
+            --title "Bump version to ${NEW_VERSION}" \
+            --body "${PR_BODY}" \
+            --base "${BASE_BRANCH}" \
+            --head "${REPO_OWNER}:${BUMP_BRANCH}"
