@@ -78,8 +78,7 @@ jobs:
 
           sleep 30 # Wait for branch to be available on GitHub
 
-          gh agent task create \
-            --repo "${REPO}" \
+          gh agent-task create \
             --base "${{ steps.create_branch.outputs.release_branch }}" \
             "Generate Release Notes"
 
