@@ -61,18 +61,30 @@ class WeightCompressionConfig:
                 return 8
             return 16
 
-        if self.mode in [
-            CompressWeightsMode.INT8_SYM,
-            CompressWeightsMode.INT8_ASYM,
-            CompressWeightsMode.FP8_E4M3,
-            CompressWeightsMode.MXFP8_E4M3,
-        ]:
-            return 8
-        return 4
+        mode_to_bits_map = {
+            CompressWeightsMode.INT4_SYM: 4,
+            CompressWeightsMode.INT4_ASYM: 4,
+            CompressWeightsMode.INT8_ASYM: 8,
+            CompressWeightsMode.INT8_SYM: 8,
+            CompressWeightsMode.NF4: 4,
+            CompressWeightsMode.FP4: 4,
+            CompressWeightsMode.MXFP4: 4,
+            CompressWeightsMode.NVFP4: 4,
+            CompressWeightsMode.FP8_E4M3: 8,
+            CompressWeightsMode.MXFP8_E4M3: 8,
+            CompressWeightsMode.INT2_SYM: 2,
+            CompressWeightsMode.INT2_ASYM: 2,
+        }
+
+        return mode_to_bits_map[self.mode]
 
     @property
     def is_asym_mode(self) -> bool:
-        return self.mode in [CompressWeightsMode.INT4_ASYM, CompressWeightsMode.INT8_ASYM]
+        return self.mode in [
+            CompressWeightsMode.INT2_ASYM,
+            CompressWeightsMode.INT4_ASYM,
+            CompressWeightsMode.INT8_ASYM,
+        ]
 
     @property
     def is_integer(self) -> bool:
@@ -118,6 +130,8 @@ class WeightCompressionConfig:
                 return TensorDataType.uint8
             return TensorDataType.uint16
         dtype_per_mode = {
+            CompressWeightsMode.INT2_SYM: TensorDataType.int4,
+            CompressWeightsMode.INT2_ASYM: TensorDataType.uint4,
             CompressWeightsMode.INT4_SYM: TensorDataType.int4,
             CompressWeightsMode.INT4_ASYM: TensorDataType.uint4,
             CompressWeightsMode.INT8_ASYM: TensorDataType.uint8,

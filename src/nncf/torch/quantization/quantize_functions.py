@@ -120,7 +120,7 @@ class QuantizeAsymmetric(torch.autograd.Function):
 
 class QuantizeSymmetricTorch(torch.autograd.Function):
     @staticmethod
-    def forward(ctx, input_, input_shape, scale, level_low, level_high, levels):
+    def forward(ctx, input_, input_shape, scale, level_low, level_high, levels, stochastic=False):
         # range: [-scale, 7/8 * scale] if scale > 0 else [7/8 * scale, -scale]
         input_low = torch.where(scale > 0, -scale, -scale / level_low * level_high)
         # 15/8 * scale or (2-1/8) * scale
@@ -129,9 +129,13 @@ class QuantizeSymmetricTorch(torch.autograd.Function):
         original_shape = input_.shape
         input_ = input_.reshape(input_shape)
 
-        output = RQ.Quantize_forward(input_.type(torch.float32), input_low, input_range, levels)
+        if stochastic:
+            output = RQ.Quantize_forward_stochastic(input_.type(torch.float32), input_low, input_range, levels)
+            ctx.save_for_backward(input_, input_low, input_range, output)
+        else:
+            output = RQ.Quantize_forward(input_.type(torch.float32), input_low, input_range, levels)
+            ctx.save_for_backward(input_, input_low, input_range, None)
 
-        ctx.save_for_backward(input_, input_low, input_range)
         ctx.level_low = level_low
         ctx.level_high = level_high
         ctx.levels = levels
@@ -141,7 +145,7 @@ class QuantizeSymmetricTorch(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_output):
-        input_, input_low, input_range = ctx.saved_tensors
+        input_, input_low, input_range, output = ctx.saved_tensors
         levels = ctx.levels
         level_low = ctx.level_low
         level_high = ctx.level_high
@@ -151,26 +155,30 @@ class QuantizeSymmetricTorch(torch.autograd.Function):
         grad_output = grad_output.reshape(input_shape)
 
         grad_input, _, grad_scale = RQ.Quantize_backward(
-            grad_output, input_, input_low, input_range, levels, level_low, level_high
+            grad_output, input_, input_low, input_range, levels, level_low, level_high, output=output
         )
 
         grad_input = grad_input.reshape(orig_shape)
         grad_scale = grad_scale.float()
         # input, input_shape, scale, level_low, level_high, levels
-        return grad_input, None, grad_scale, None, None, None
+        return grad_input, None, grad_scale, None, None, None, None
 
 
 class QuantizeAsymmetricTorch(torch.autograd.Function):
     @staticmethod
-    def forward(ctx, input_, input_shape, input_low, input_range, level_low, level_high, levels):
+    def forward(ctx, input_, input_shape, input_low, input_range, level_low, level_high, levels, stochastic=False):
         dtype = input_.dtype
         original_shape = input_.shape
         input_ = input_.reshape(input_shape)
 
-        output = RQ.Quantize_forward(input_.type(torch.float32), input_low, input_range, levels)
+        if stochastic:
+            output = RQ.Quantize_forward_stochastic(input_.type(torch.float32), input_low, input_range, levels)
+            ctx.save_for_backward(input_, input_low, input_range, output)
+        else:
+            output = RQ.Quantize_forward(input_.type(torch.float32), input_low, input_range, levels)
+            ctx.save_for_backward(input_, input_low, input_range, None)
 
         # Save tensors for backward pass
-        ctx.save_for_backward(input_, input_low, input_range)
         ctx.level_low = level_low
         ctx.level_high = level_high
         ctx.levels = levels
@@ -180,7 +188,7 @@ class QuantizeAsymmetricTorch(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_output):
-        input_, input_low, input_range = ctx.saved_tensors
+        input_, input_low, input_range, output = ctx.saved_tensors
         levels = ctx.levels
         level_low = ctx.level_low
         level_high = ctx.level_high
@@ -189,14 +197,14 @@ class QuantizeAsymmetricTorch(torch.autograd.Function):
         grad_output = grad_output.reshape(input_shape)
 
         grad_input, grad_low, grad_range = RQ.Quantize_backward(
-            grad_output, input_, input_low, input_range, levels, level_low, level_high
+            grad_output, input_, input_low, input_range, levels, level_low, level_high, output=output
         )
 
         grad_input = grad_input.reshape(orig_shape)
         grad_low = grad_low.float()
         grad_range = grad_range.float()
         # input, input_size, input_low, input_range, level_low, level_high, levels
-        return grad_input, None, grad_low, grad_range, None, None, None
+        return grad_input, None, grad_low, grad_range, None, None, None, None
 
 
 class ExportQuantizeToFakeQuantize(torch.autograd.Function):
@@ -282,7 +290,18 @@ def asymmetric_quantize(input_, levels, level_low, level_high, input_low, input_
 
 
 def asymmetric_quantize_lora(
-    input_, input_shape, A, B, input_low_, input_range_, level_low, level_high, levels, eps, skip: bool = False
+    input_,
+    input_shape,
+    A,
+    B,
+    input_low_,
+    input_range_,
+    level_low,
+    level_high,
+    levels,
+    eps,
+    skip: bool = False,
+    stochastic=False,
 ):
     if has_torch_function_unary(input_):
         return handle_torch_function(
@@ -299,6 +318,7 @@ def asymmetric_quantize_lora(
             levels,
             eps,
             skip,
+            stochastic,
         )
     if skip:
         return input_
@@ -313,10 +333,13 @@ def asymmetric_quantize_lora(
         level_low,
         level_high,
         levels,
+        stochastic,
     )
 
 
-def symmetric_quantize_lora(input_, input_shape, A, B, scale, level_low, level_high, levels, eps, skip: bool = False):
+def symmetric_quantize_lora(
+    input_, input_shape, A, B, scale, level_low, level_high, levels, eps, skip: bool = False, stochastic=False
+):
     if has_torch_function_unary(input_):
         return handle_torch_function(
             symmetric_quantize_lora,
@@ -331,6 +354,7 @@ def symmetric_quantize_lora(input_, input_shape, A, B, scale, level_low, level_h
             levels,
             eps,
             skip,
+            stochastic,
         )
     if skip:
         return input_
@@ -343,6 +367,7 @@ def symmetric_quantize_lora(input_, input_shape, A, B, scale, level_low, level_h
         level_low,
         level_high,
         levels,
+        stochastic,
     )
 
 
@@ -471,3 +496,45 @@ def unpack_int4(packed_tensor: torch.Tensor) -> torch.Tensor:
     """
     t = unpack_uint4(packed_tensor)
     return t.type(torch.int8) - 8
+
+
+def pack_uint2(tensor: torch.Tensor) -> torch.Tensor:
+    """
+    Packs a tensor containing uint2 values (in the range [0, 3]) into a tensor with uint8 values,
+    where each element stores four uint2 values.
+
+    :param tensor: A tensor of dtype `torch.uint8` where each element represents a uint2 value.
+        The tensor should contain values in the range [0, 3].
+    :return: A packed tensor of dtype `torch.uint8` where each element packs four uint2 values.
+    :raises nncf.errors.ValidationError: If the input tensor is not of type `torch.uint8`.
+    """
+    if tensor.dtype != torch.uint8:
+        msg = f"Invalid tensor dtype {tensor.type}. torch.uint8 type is supported."
+        raise ValidationError(msg)
+    packed_tensor = tensor.contiguous().reshape(-1, 4)
+    packed_tensor = (
+        torch.bitwise_and(packed_tensor[..., 0], 3)
+        | (torch.bitwise_and(packed_tensor[..., 1], 3) << 2)
+        | (torch.bitwise_and(packed_tensor[..., 2], 3) << 4)
+        | (torch.bitwise_and(packed_tensor[..., 3], 3) << 6)
+    )
+    return packed_tensor
+
+
+def unpack_uint2(packed_tensor: torch.Tensor) -> torch.Tensor:
+    """
+    Unpacks a tensor, where each uint8 element stores four uint2 values, back into a tensor with
+    individual uint2 values.
+
+    :param packed_tensor: A tensor of dtype `torch.uint8` where each element packs four uint2 values.
+    :return: A tensor of dtype `torch.uint8` where each element represents a uint2 value.
+    """
+    return torch.stack(
+        (
+            torch.bitwise_and(packed_tensor, 3),
+            torch.bitwise_and(torch.bitwise_right_shift(packed_tensor, 2), 3),
+            torch.bitwise_and(torch.bitwise_right_shift(packed_tensor, 4), 3),
+            torch.bitwise_and(torch.bitwise_right_shift(packed_tensor, 6), 3),
+        ),
+        dim=-1,
+    )
