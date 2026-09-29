@@ -23,8 +23,9 @@ updates:
   - package-ecosystem: pip
     directories:
       - "/"
-      - "/tests/**/*"
-      - "/examples/**/*"
+      - "/tests/*
+    exclude-paths:
+      - ".ci/cspell_dict.txt"
     schedule:
       interval: "weekly"
       day: "monday"
