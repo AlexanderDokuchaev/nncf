@@ -23,7 +23,7 @@ updates:
   - package-ecosystem: pip
     directories:
       - "/"
-      - "/tests/*
+      - "/tests/*"
     exclude-paths:
       - ".ci/cspell_dict.txt"
     schedule:
