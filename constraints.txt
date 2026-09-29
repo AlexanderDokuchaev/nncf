@@ -26,6 +26,6 @@ datasets==5.0.1
 matplotlib==3.10.9
 pandas==2.3.3
 fastprogress==1.0.5
-fastcore==1.11.5
+fastcore==2.2.30
 typing_extensions==4.16.0; python_version < '3.12'
 pydot==3.0.4; python_version < '3.11'
