@@ -9,7 +9,7 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
-      time: "09:00"
+      time: "06:00"
       timezone: "Asia/Dubai"
     assignees:
       - "AlexanderDokuchaev"
@@ -21,24 +21,32 @@ updates:
 
   # Python
   - package-ecosystem: pip
-    directory: "/"
+    directories:
+      - "/"
+      - "/tests/**/*"
+      - "/examples/**/*"
     schedule:
       interval: "weekly"
       day: "monday"
-      time: "09:00"
+      time: "06:00"
       timezone: "Asia/Dubai"
     open-pull-requests-limit: 10
     assignees:
       - "AlexanderDokuchaev"
     versioning-strategy: increase-if-necessary
-    ignore:
-      # Frameworks
-      - dependency-name: "onnx"
-      - dependency-name: "onnxruntime"
-      - dependency-name: "onnx-ir"
-      - dependency-name: "onnxscript"
-      - dependency-name: "openvino"
-      - dependency-name: "torch"
-      - dependency-name: "torchvision"
-      # Tests
-      - dependency-name: "pytest*"
+    groups:
+      pytorch:
+        patterns:
+          - "torch"
+          - "torchvision"
+          - "torchao"
+      pytest:
+        patterns:
+          - "pytest*"
+      onnx:
+        patterns:
+          - "onnx*"
+      python-dependencies:
+        patterns:
+          - "*"
+        group-by: dependency-name
