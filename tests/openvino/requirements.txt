@@ -1,5 +1,5 @@
 -c ../../constraints.txt
-fastdownload==0.0.7
+fastdownload==0.0.8
 matplotlib
 onnx
 openvino
